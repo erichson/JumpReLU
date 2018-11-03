@@ -101,12 +101,12 @@ model.eval()
 
 stat_time = time.time()
 if args.data_set == 'test':
-    X_ori = torch.Tensor(10000, 1, 28,28)
-    X_fgsm = torch.Tensor(10000, 1, 28,28)
-    X_deepfool = torch.Tensor(10000, 1, 28,28)
-    X_tr_first = torch.Tensor(10000, 1, 28,28)
-    X_tr_first_adp = torch.Tensor(10000, 1, 28,28)
-    X_tr_second = torch.Tensor(10000, 1, 28,28)
+    X_ori = torch.Tensor(10000, 1, 28, 28)
+    X_fgsm = torch.Tensor(10000, 1, 28, 28)
+    X_deepfool = torch.Tensor(10000, 1, 28, 28)
+    X_tr_first = torch.Tensor(10000, 1, 28, 28)
+    X_tr_first_adp = torch.Tensor(10000, 1, 28, 28)
+    X_tr_second = torch.Tensor(10000, 1, 28, 28)
 
     iter_fgsm = 0.
     iter_dp = 0.
