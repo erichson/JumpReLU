@@ -98,8 +98,6 @@ class JumpNetW_EMNIST(nn.Module):
         super(JumpNetW_EMNIST, self).__init__()
         
         self.features = nn.Sequential(
-            nn.Conv2d(1,3, kernel_size=1), # 1 to 1 map
-            JumpReLU(),
             nn.Conv2d(3, 10, kernel_size=5),# 32x32x3 -> 32x32x64
             JumpReLU(),
             nn.MaxPool2d(2),
@@ -118,7 +116,6 @@ class JumpNetW_EMNIST(nn.Module):
 
 
     def forward(self, x):
-        print(x.shape)
         x = self.features(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
