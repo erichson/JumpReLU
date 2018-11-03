@@ -25,19 +25,34 @@ from advfuns import *
 #==============================================================================
 # Attack settings
 #==============================================================================
-parser = argparse.ArgumentParser(description='PyTorch CIFAR Example')
+parser = argparse.ArgumentParser(description='Attack Example')
+
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N', help='input batch size for testing (default: 1000)')
+
 parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
+
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
+
 parser.add_argument('--norm', type=int, default=2, metavar='S', help='2')
+
 parser.add_argument('--classes', type=int, default=9, metavar='S', help='')
+
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='how many batches to wait before logging training status')
+
 parser.add_argument('--eps', type=float, default=0.01, metavar='E', help='how far to perturb input in the negative gradient sign')
-parser.add_argument('--arch', type=str, default='Net', help='choose an archtecture')
+
+parser.add_argument('--arch', type=str, default='Net', help='choose an architecture')
+
 parser.add_argument('--resume', type=str, default='net.pkl', help='choose an existing model')
-parser.add_argument('--data-set', type=str, default='test', help='choose an archtecture')
-parser.add_argument('--second-order-attack', type=int, default=0, help='choose an archtecture')
-parser.add_argument('--iter', type=int, default=100, help='choose an archtecture')
+
+parser.add_argument('--dataset', type=str, default='mnist', help='chose dataset')
+
+parser.add_argument('--data-set', type=str, default='test', help='chose dataset')
+
+parser.add_argument('--second-order-attack', type=int, default=0, help='second order attack')
+
+parser.add_argument('--iter', type=int, default=100, help='number of iterations')
+
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 torch.manual_seed(args.seed)
@@ -49,8 +64,11 @@ if args.cuda:
 
 kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 
-train_loader, test_loader = getData(name='mnist', train_bs=args.test_batch_size, test_bs=args.test_batch_size)
+train_loader, test_loader = getData(name=args.dataset, train_bs=args.test_batch_size, test_bs=args.test_batch_size)
 bz = args.test_batch_size
+
+
+
 
 
 for arg in vars(args):
@@ -76,15 +94,19 @@ model.load_state_dict(torch.load(args.resume))
 model.eval()
 
 
-######## begin attack
+
+#==============================================================================
+# Begin attack
+#==============================================================================
+
 stat_time = time.time()
 if args.data_set == 'test':
-    X_ori = torch.Tensor(10000,1,28,28)
-    X_fgsm = torch.Tensor(10000,1,28,28)
-    X_deepfool = torch.Tensor(10000,1,28,28)
-    X_tr_first = torch.Tensor(10000,1,28,28)
-    X_tr_first_adp = torch.Tensor(10000,1,28,28)
-    X_tr_second = torch.Tensor(10000,1,28,28)
+    X_ori = torch.Tensor(10000, 1, 28,28)
+    X_fgsm = torch.Tensor(10000, 1, 28,28)
+    X_deepfool = torch.Tensor(10000, 1, 28,28)
+    X_tr_first = torch.Tensor(10000, 1, 28,28)
+    X_tr_first_adp = torch.Tensor(10000, 1, 28,28)
+    X_tr_second = torch.Tensor(10000, 1, 28,28)
 
     iter_fgsm = 0.
     iter_dp = 0.
@@ -95,7 +117,10 @@ if args.data_set == 'test':
     Y_test = torch.LongTensor(10000)
     
     for i, (data, target) in enumerate(test_loader):
-        X_ori [i*bz:(i+1)*bz,:] = data
+        if(i > 9):
+            break
+
+        X_ori[i*bz:(i+1)*bz, :] = data
         Y_test[i*bz:(i+1)*bz] = target
         
         X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
@@ -145,6 +170,7 @@ result_dis[2],result_large[2]= distance(X_deepfool,X_ori, args)
 result_dis[3],result_large[3]= distance(X_tr_first,X_ori, args)
 result_dis[4],result_large[4]= distance(X_tr_first_adp,X_ori, args)
 result_dis[5],result_large[5]= distance(X_tr_second,X_ori, args)
+
 
 print('Accuracy: ', np.round(result_acc, 3))
 #print(result_ent)

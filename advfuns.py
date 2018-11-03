@@ -6,14 +6,6 @@ from utils import *
 from model import *
 
 
-def generate_class(n, target):
-    Y_adv = torch.LongTensor(n)
-    for i in range(n):
-        Y_adv[i:i+1] = torch.randperm(10)[0]
-        while Y_adv[i:i+1].numpy() == target[i:i+1].numpy():
-            Y_adv[i:i+1] = torch.randperm(10)[0]
-    return Y_adv
-
 
 
 def test_ori(model, test_loader, args):

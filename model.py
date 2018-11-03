@@ -9,19 +9,17 @@ class NetW(nn.Module):
     def __init__(self):
         super(NetW, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(1,3, kernel_size=1), # 1 to 1 map
-            Swish(),
-            nn.Conv2d(3, 10, kernel_size=5),# 32x32x3 -> 32x32x64
-            Swish(),
+            nn.Conv2d(1, 10, kernel_size=5),# 32x32x3 -> 32x32x64
+            nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 20, kernel_size=5),# 16x16x64 -> 16x16x64
-            Swish(),
+            nn.ReLU(),
             nn.MaxPool2d(2),# 16x16x64 -> 8x8x64
             nn.Dropout()
         )
         self.classifier = nn.Sequential(
             nn.Linear(320, 50),
-            Swish(),
+            nn.ReLU(),
             nn.Linear(50,10),
         )
 
@@ -39,9 +37,7 @@ class JumpNetW(nn.Module):
         super(JumpNetW, self).__init__()
         
         self.features = nn.Sequential(
-            nn.Conv2d(1,3, kernel_size=1), # 1 to 1 map
-            JumpReLU(),
-            nn.Conv2d(3, 10, kernel_size=5),# 32x32x3 -> 32x32x64
+            nn.Conv2d(1, 10, kernel_size=5),# 32x32x3 -> 32x32x64
             JumpReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 20, kernel_size=5),# 16x16x64 -> 16x16x64
@@ -75,17 +71,17 @@ class NetW_EMNIST(nn.Module):
         super(NetW_EMNIST, self).__init__()
         self.features = nn.Sequential(
             nn.Conv2d(1, 10, kernel_size=5),# 32x32x3 -> 32x32x64
-            Swish(),
+            nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 20, kernel_size=5),# 16x16x64 -> 16x16x64
-            Swish(),
+            nn.ReLU(),
             nn.MaxPool2d(2),# 16x16x64 -> 8x8x64
             nn.Dropout()
         )
         self.classifier = nn.Sequential(
             nn.Linear(320, 100),
-            Swish(),
-            nn.Linear(100,48),
+            nn.ReLU(),
+            nn.Linear(100, 48),
         )
 
     def forward(self, x):
@@ -116,7 +112,7 @@ class JumpNetW_EMNIST(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(320, 100),
             JumpReLU(),
-            nn.Linear(100,48),
+            nn.Linear(100, 48),
         )
 
 
