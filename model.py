@@ -40,7 +40,7 @@ from activationfun import *
 
 class JumpNet(nn.Module):
     def __init__(self, jump_val=0.):
-        super(NetW_shift, self).__init__()
+        super(JumpNet, self).__init__()
         
         self.jump = jump_val
         self.conv1 = nn.Conv2d(1,3, kernel_size=1) # 1 to 1 map

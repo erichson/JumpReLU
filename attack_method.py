@@ -184,3 +184,22 @@ def deep_fool_iter(model, data, target,c=9, p=2, iter=10, worst_case = False):
         X_adv[attack_mask,:] = deep_fool(model, X_adv[attack_mask,:],target[attack_mask], target_ind[attack_mask], p=p)
     return X_adv, update_num
 
+def deep_fool_target_iter(model, data, target,target_ind, p=2, iter=10):
+    X_adv = data.cuda() + 0.0
+    update_num = 0.
+    for i in range(iter):
+        model.eval()
+        Xdata, Xtarget = X_adv, target.cuda()
+        Xdata, Xtarget = Variable(Xdata, requires_grad=True), Variable(Xtarget)
+        model.zero_grad()
+        Xoutput = model(Xdata)
+        Xpred = Xoutput.data.max(1, keepdim=True)[1] # get the index of the max log-probability
+        tmp_mask = Xpred.view_as(Xtarget)==Xtarget.data # get index
+        update_num += torch.sum(tmp_mask.long())
+        #print('need to attack: ', torch.sum(tmp_mask))
+        if torch.sum(tmp_mask.long()) < 1:
+            break
+        #print (i, ': ', torch.sum(tmp_mask.long()))
+        attack_mask = tmp_mask.nonzero().view(-1)
+        X_adv[attack_mask,:] = deep_fool(model, X_adv[attack_mask,:],target[attack_mask], target_ind[attack_mask], p=p)
+    return X_adv, update_num
