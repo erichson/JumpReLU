@@ -4,8 +4,8 @@ import torch.nn as nn
 
 
 def hard_threshold(arr, thresh=0.0):
-      arr[arr <= thresh] = 0.0
-      return arr
+    arr[arr <= thresh] = 0.0
+    return arr
 
 
 class JumpReLU(nn.Module):
@@ -25,13 +25,14 @@ class JumpReLU(nn.Module):
         >>> input = torch.randn(2)
         >>> output = m(input)
     """
-
+    def __init__(self, shift=0.):
+        super(ReLUshift, self).__init__()
+        self.shift = shift
+        
     def forward(self, input):
         if(self.training == True):
             return hard_threshold(input, thresh=0.0)
-
         elif(self.training == False):
-            return hard_threshold(input, thresh=0.0)
-
+            return hard_threshold(input, thresh=self.shift)
     def __repr__(self):
         return self.__class__.__name__ + '()'

@@ -19,7 +19,7 @@ import os
 
 parser = argparse.ArgumentParser(description='PyTorch Example')
 #
-parser.add_argument('--name', type=str, default='cifar100', metavar='N', help='dataset')
+parser.add_argument('--name', type=str, default='cifar10', metavar='N', help='dataset')
 #
 parser.add_argument('--batch-size', type=int, default=512, metavar='N', help='input batch size for training (default: 64)')
 #
