@@ -101,16 +101,15 @@ stat_time = time.time()
 if args.data_set == 'test':
     X_ori = torch.Tensor(10000, 1, 28, 28)
     X_fgsm = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool = torch.Tensor(10000, 1, 28, 28)
-    X_tr_first = torch.Tensor(10000, 1, 28, 28)
-    X_tr_first_adp = torch.Tensor(10000, 1, 28, 28)
-    X_tr_second = torch.Tensor(10000, 1, 28, 28)
+    X_deepfool1 = torch.Tensor(10000, 1, 28, 28)
+    X_deepfool2 = torch.Tensor(10000, 1, 28, 28)
+
+
 
     iter_fgsm = 0.
-    iter_dp = 0.
-    iter_tr_first = 0.
-    iter_tr_first_adp = 0.
-    iter_tr_second = 0.
+    iter_dp1 = 0.
+    iter_dp2 = 0.
+
 
     Y_test = torch.LongTensor(10000)
     
@@ -124,19 +123,12 @@ if args.data_set == 'test':
         X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
         iter_fgsm += a
         
-        #X_deepfool[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=args.norm, iter=args.iter)
-        iter_dp += a
+        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=args.norm, iter=args.iter)
+        iter_dp1 += a
         
-        X_tr_first[i*bz:(i+1)*bz,:], a = xp_attack_iter(model, data, target, args.eps,c=args.classes ,p=args.norm, iter=args.iter)
-        iter_tr_first += a
+        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=args.norm, iter=args.iter)
+        iter_dp2 += a
         
-        X_tr_first_adp[i*bz:(i+1)*bz,:], a = xp_attack_adaptive_iter(model, data, target, args.eps,c=args.classes,p=args.norm, iter=args.iter)
-        iter_tr_first_adp += a
-        if args.second_order_attack:
-            print('second')
-            X_tr_second[i*bz:(i+1)*bz,:], a = xp_attack_tr_lc_parallel_iter(model, data, target, args.eps, c=args.classes,  iter=args.iter//5, lanczos_step=2)
-            iter_tr_second += a
-
         print('current iteration: ', i)
 
 
