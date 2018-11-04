@@ -141,26 +141,25 @@ print('total_time: ', time.time()-stat_time)
 
 
 
-result_acc = np.zeros(9)
-result_ent = np.zeros(9)
-result_dis = np.zeros(9)
-result_large = np.zeros(9)
+result_acc = np.zeros(4)
+result_ent = np.zeros(4)
+result_dis = np.zeros(4)
+result_large = np.zeros(4)
 
 result_acc[0], result_ent[0] = test_ori(model, test_loader, args)
 result_acc[1], result_ent[1] = test(X_fgsm, Y_test, model, args)
-result_acc[2], result_ent[2] = test(X_deepfool, Y_test, model, args)
-result_acc[3], result_ent[3] = test(X_tr_first, Y_test, model, args)
-result_acc[4], result_ent[4] = test(X_tr_first_adp, Y_test, model, args)
-result_acc[5], result_ent[5] = test(X_tr_second, Y_test, model, args)
-
-result_dis[1],result_large[1]= distance(X_fgsm,X_ori, args)
-result_dis[2],result_large[2]= distance(X_deepfool,X_ori, args)
-result_dis[3],result_large[3]= distance(X_tr_first,X_ori, args)
-result_dis[4],result_large[4]= distance(X_tr_first_adp,X_ori, args)
-result_dis[5],result_large[5]= distance(X_tr_second,X_ori, args)
+result_acc[2], result_ent[2] = test(X_deepfool1, Y_test, model, args)
+result_acc[3], result_ent[3] = test(X_deepfool2, Y_test, model, args)
 
 
-print('Accuracy: ', np.round(result_acc, 3))
+
+result_dis[1],result_large[1]= distance(X_fgsm,X_ori, norm=1)
+result_dis[2],result_large[2]= distance(X_deepfool1,X_ori, norm=1)
+result_dis[3],result_large[3]= distance(X_deepfool2,X_ori, norm=2)
+
+
+
+print('Accuracy: ', np.round(result_acc, 4))
 #print(result_ent)
-print('Noise Lev:', np.round(result_dis, 3))
+print('Noise Lev:', np.round(result_dis, 4))
 #print(result_large)
