@@ -43,7 +43,9 @@ class JumpNet_EMNIST(nn.Module):
         super(JumpNet_EMNIST, self).__init__()
         
         self.features = nn.Sequential(
-            nn.Conv2d(1, 10, kernel_size=5),# 32x32x3 -> 32x32x64
+            nn.Conv2d(1, 3, kernel_size=1),# 32x32x3 -> 32x32x64
+            JumpReLU(), 
+            nn.Conv2d(3, 10, kernel_size=5),# 32x32x3 -> 32x32x64
             JumpReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 20, kernel_size=5),# 16x16x64 -> 16x16x64
