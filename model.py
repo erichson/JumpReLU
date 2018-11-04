@@ -53,9 +53,9 @@ class JumpNet_EMNIST(nn.Module):
         )
         
         self.classifier = nn.Sequential(
-            nn.Linear(320, 100),
+            nn.Linear(320, 200),
             JumpReLU(),
-            nn.Linear(100, 48),
+            nn.Linear(200, 48),
         )
 
 
