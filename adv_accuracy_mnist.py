@@ -78,10 +78,8 @@ for arg in vars(args):
 # get model 
 #==============================================================================
 model_list = {
-    'NetW': NetW(),
-    'JumpNetW': JumpNetW(),
-    'NetW_EMNIST': NetW_EMNIST(),
-    'JumpNetW_EMNIST': JumpNetW_EMNIST()
+    'JumpNet': JumpNet(),
+    'JumpNet_EMNIST': JumpNet_EMNIST()
 }
 
 

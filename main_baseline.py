@@ -72,10 +72,8 @@ print('data is loaded')
 # get model and optimizer
 #==============================================================================
 model_list = {
-    'NetW': NetW(),
-    'JumpNetW': JumpNetW(),
-    'NetW_EMNIST': NetW_EMNIST(),
-    'JumpNetW_EMNIST': JumpNetW_EMNIST()
+    'JumpNet': JumpNet(),
+    'JumpNet_EMNIST': JumpNet_EMNIST()
 }
 
 
