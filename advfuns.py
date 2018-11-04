@@ -12,10 +12,12 @@ def test_ori(model, test_loader, args):
     model.eval()
     correct = 0
     total_ent = 0.
+    total_num = 0.
     with torch.no_grad():
         for data, target in test_loader:
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
+            total_num += len(target)
             output = model(data)
             #print(correct)
             ent = F.softmax(output, dim=0)
@@ -24,13 +26,9 @@ def test_ori(model, test_loader, args):
             pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
             correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
 
-    if(args.dataset == 'mnist'):
-        print('correct: ', correct / 10000.)
-        return correct/10000., total_ent/10000.
 
-    elif(args.dataset == 'emnist'):
-        print('correct: ', correct / 18800.)
-        return correct/18800., total_ent/18800.
+    print('correct: ', correct / total_num)
+    return correct/total_num, total_ent/total_num
 
 
 def test(adv_data, Y_test, model, args):

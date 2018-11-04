@@ -33,8 +33,6 @@ parser.add_argument('--no-cuda', action='store_true', default=False, help='disab
 
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 
-parser.add_argument('--norm', type=int, default=2, metavar='S', help='2')
-
 parser.add_argument('--classes', type=int, default=9, metavar='S', help='')
 
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='how many batches to wait before logging training status')
@@ -46,10 +44,6 @@ parser.add_argument('--arch', type=str, default='Net', help='choose an architect
 parser.add_argument('--resume', type=str, default='net.pkl', help='choose an existing model')
 
 parser.add_argument('--dataset', type=str, default='mnist', help='chose dataset')
-
-parser.add_argument('--data-set', type=str, default='test', help='chose dataset')
-
-parser.add_argument('--second-order-attack', type=int, default=0, help='second order attack')
 
 parser.add_argument('--iter', type=int, default=100, help='number of iterations')
 
@@ -99,10 +93,14 @@ model.eval()
 
 stat_time = time.time()
 if args.data_set == 'test':
-    X_ori = torch.Tensor(10000, 1, 28, 28)
-    X_fgsm = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool1 = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool2 = torch.Tensor(10000, 1, 28, 28)
+    if args.name == 'mnist':
+        num_data = 10000
+    elif args.name == 'emnist':
+        num_data = 18800
+    X_ori = torch.Tensor(num_data, 1, 28, 28)
+    X_fgsm = torch.Tensor(num_data, 1, 28, 28)
+    X_deepfool1 = torch.Tensor(num_data, 1, 28, 28)
+    X_deepfool2 = torch.Tensor(num_data, 1, 28, 28)
 
 
 
@@ -111,11 +109,11 @@ if args.data_set == 'test':
     iter_dp2 = 0.
 
 
-    Y_test = torch.LongTensor(10000)
+    Y_test = torch.LongTensor(num_data)
     
     for i, (data, target) in enumerate(test_loader):
-        if(i > 9):
-            break
+#         if(i > 9):
+#             break
 
         X_ori[i*bz:(i+1)*bz, :] = data
         Y_test[i*bz:(i+1)*bz] = target
@@ -123,10 +121,10 @@ if args.data_set == 'test':
         X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
         iter_fgsm += a
         
-        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=args.norm, iter=args.iter)
+        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=1, iter=args.iter)
         iter_dp1 += a
         
-        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=args.norm, iter=args.iter)
+        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=2, iter=args.iter)
         iter_dp2 += a
         
         print('current iteration: ', i)
