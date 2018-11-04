@@ -4,7 +4,8 @@ import torch.nn as nn
 
 
 def hard_threshold(arr, thresh=0.0):
-    return arr[arr <= thresh] = 0.0
+      arr[arr <= thresh] = 0.0
+      return arr
 
 
 class JumpReLU(nn.Module):
@@ -27,10 +28,10 @@ class JumpReLU(nn.Module):
 
     def forward(self, input):
         if(self.training == True):
-            return max(input, 0.0)
+            return hard_threshold(input, thresh=0.0)
 
         elif(self.training == False):
-            return hard_threshold(input, thresh=1.5)
+            return hard_threshold(input, thresh=0.0)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
