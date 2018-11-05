@@ -98,44 +98,38 @@ test_ori(model, test_loader, args)
 # Begin attack
 #==============================================================================
 
+X_ori = torch.Tensor(10000, 1, 28, 28)
+X_fgsm = torch.Tensor(10000, 1, 28, 28)
+X_deepfool1 = torch.Tensor(10000, 1, 28, 28)
+X_deepfool2 = torch.Tensor(10000, 1, 28, 28)
+
+iter_fgsm = 0.
+iter_dp1 = 0.
+iter_dp2 = 0.
+
+Y_test = torch.LongTensor(10000)
+
+for i, (data, target) in enumerate(test_loader):
+#         if(i > 9):
+#             break
+
+    X_ori[i*bz:(i+1)*bz, :] = data
+    Y_test[i*bz:(i+1)*bz] = target
+
+    X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
+    iter_fgsm += a
+
+    X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=1, iter=args.iter)
+    iter_dp1 += a
+
+    X_deepfool2[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=2, iter=args.iter)
+    iter_dp2 += a
+
+    print('current iteration: ', i)
 
 
 if not os.path.exists('generate_data'):
     os.makedirs('generate_data')
-
-if args.data_set == 'test':
-    X_ori = torch.Tensor(10000, 1, 28, 28)
-    X_fgsm = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool1 = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool2 = torch.Tensor(10000, 1, 28, 28)
-
-    iter_fgsm = 0.
-    iter_dp1 = 0.
-    iter_dp2 = 0.
-
-    Y_test = torch.LongTensor(10000)
-    
-    for i, (data, target) in enumerate(test_loader):
-#         if(i > 9):
-#             break
-
-        X_ori[i*bz:(i+1)*bz, :] = data
-        Y_test[i*bz:(i+1)*bz] = target
-        
-        X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
-        iter_fgsm += a
-        
-        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=1, iter=args.iter)
-        iter_dp1 += a
-        
-        X_deepfool2[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=2, iter=args.iter)
-        iter_dp2 += a
-
-        print('current iteration: ', i)
-
-
-    if not os.path.exists('generate_data'):
-        os.makedirs('generate_data')
 
 #     torch.save([X_ori, X_fgsm, X_deepfool, X_tr_first, X_tr_first_adp, X_tr_second, Y_test], 'generate_data/'+args.arch.lower()+str(args.norm)+'.pt',)    
 
