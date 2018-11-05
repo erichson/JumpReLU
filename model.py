@@ -78,9 +78,9 @@ class JumpNet(nn.Module):
 
 
 class JumpNet_EMNIST(nn.Module):
-    def __init__(self):
+    def __init__(self,jump_val=0.):
         super(JumpNet_EMNIST, self).__init__()
-        
+        self.jump = jump_val
         self.features = nn.Sequential(
             nn.Conv2d(1, 3, kernel_size=1),# 32x32x3 -> 32x32x64
             JumpReLU(self.jump), 

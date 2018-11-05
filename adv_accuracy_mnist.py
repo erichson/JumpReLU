@@ -47,6 +47,8 @@ parser.add_argument('--dataset', type=str, default='mnist', help='chose dataset'
 
 parser.add_argument('--iter', type=int, default=100, help='number of iterations')
 
+parser.add_argument('--jump-val', type=float, default=1.5, metavar='E', help='jump value')
+
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 torch.manual_seed(args.seed)
@@ -72,8 +74,8 @@ for arg in vars(args):
 # get model 
 #==============================================================================
 model_list = {
-    'JumpNet': JumpNet(),
-    'JumpNet_EMNIST': JumpNet_EMNIST()
+    'JumpNet': JumpNet(jump_val = args.jump_val),
+    'JumpNet_EMNIST': JumpNet_EMNIST(jump_val = args.jump_val)
 }
 
 
@@ -86,57 +88,60 @@ model.load_state_dict(torch.load(args.resume))
 model.eval()
 
 
+#==============================================================================
+# Evaluation the original Accuracy after jumping
+#==============================================================================
+test_ori(model, test_loader, args)
+
 
 #==============================================================================
 # Begin attack
 #==============================================================================
 
+print('\n********************Attackking')
 stat_time = time.time()
-if args.data_set == 'test':
-    if args.name == 'mnist':
-        num_data = 10000
-    elif args.name == 'emnist':
-        num_data = 18800
-    X_ori = torch.Tensor(num_data, 1, 28, 28)
-    X_fgsm = torch.Tensor(num_data, 1, 28, 28)
-    X_deepfool1 = torch.Tensor(num_data, 1, 28, 28)
-    X_deepfool2 = torch.Tensor(num_data, 1, 28, 28)
+if args.dataset == 'mnist':
+    num_data = 10000
+elif args.dataset == 'emnist':
+    num_data = 18800
+X_ori = torch.Tensor(num_data, 1, 28, 28)
+X_fgsm = torch.Tensor(num_data, 1, 28, 28)
+X_deepfool1 = torch.Tensor(num_data, 1, 28, 28)
+X_deepfool2 = torch.Tensor(num_data, 1, 28, 28)
 
 
 
-    iter_fgsm = 0.
-    iter_dp1 = 0.
-    iter_dp2 = 0.
+iter_fgsm = 0.
+iter_dp1 = 0.
+iter_dp2 = 0.
 
 
-    Y_test = torch.LongTensor(num_data)
-    
-    for i, (data, target) in enumerate(test_loader):
-#         if(i > 9):
-#             break
+Y_test = torch.LongTensor(num_data)
 
-        X_ori[i*bz:(i+1)*bz, :] = data
-        Y_test[i*bz:(i+1)*bz] = target
-        
-        X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
-        iter_fgsm += a
-        
-        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=1, iter=args.iter)
-        iter_dp1 += a
-        
-        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=2, iter=args.iter)
-        iter_dp2 += a
-        
-        print('current iteration: ', i)
+for i, (data, target) in enumerate(test_loader):
+
+    X_ori[i*bz:(i+1)*bz, :] = data
+    Y_test[i*bz:(i+1)*bz] = target
+
+    X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
+    iter_fgsm += a
+
+    X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=1, iter=args.iter)
+    iter_dp1 += a
+
+    X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=2, iter=args.iter)
+    iter_dp2 += a
+
+    print('current iteration: ', i)
 
 
-    if not os.path.exists('generate_data'):
-        os.makedirs('generate_data')
+if not os.path.exists('generate_data'):
+    os.makedirs('generate_data')
 
-    torch.save([X_ori, X_fgsm, X_deepfool, X_tr_first, X_tr_first_adp, X_tr_second, Y_test], 'generate_data/'+args.arch.lower()+str(args.norm)+'.pt',)    
+torch.save([X_ori, X_fgsm, X_deepfool1,X_deepfool2, Y_test], 'generate_data/'+args.arch.lower()+'.pt',)    
 
 
-print('iters: ', iter_fgsm, iter_dp, iter_tr_first, iter_tr_first_adp, iter_tr_second)
+print('iters: ', iter_fgsm, iter_dp1, iter_dp2)
 print('total_time: ', time.time()-stat_time)
 
 

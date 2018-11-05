@@ -132,4 +132,4 @@ for epoch in range(1, args.epochs + 1):
     test(model, test_loader)   
     optimizer=exp_lr_scheduler(epoch, optimizer, strategy=args.lr_schedule, decay_eff=args.lr_decay, decayEpoch=args.lr_decay_epoch)
 
-torch.save(model.state_dict(), args.name + '_result/'+args.arch+'baseline'+str(args.large_ratio)+'.pkl')  
+torch.save(model.state_dict(), args.name + '_result/'+args.arch+'baseline'+'.pkl')  
