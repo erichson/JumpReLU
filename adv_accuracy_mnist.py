@@ -101,22 +101,18 @@ stat_time = time.time()
 if args.data_set == 'test':
     X_ori = torch.Tensor(10000, 1, 28, 28)
     X_fgsm = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool = torch.Tensor(10000, 1, 28, 28)
-    X_tr_first = torch.Tensor(10000, 1, 28, 28)
-    X_tr_first_adp = torch.Tensor(10000, 1, 28, 28)
-    X_tr_second = torch.Tensor(10000, 1, 28, 28)
+    X_deepfool1 = torch.Tensor(10000, 1, 28, 28)
+    X_deepfool2 = torch.Tensor(10000, 1, 28, 28)
 
     iter_fgsm = 0.
-    iter_dp = 0.
-    iter_tr_first = 0.
-    iter_tr_first_adp = 0.
-    iter_tr_second = 0.
+    iter_dp1 = 0.
+    iter_dp2 = 0.
 
     Y_test = torch.LongTensor(10000)
     
     for i, (data, target) in enumerate(test_loader):
-        if(i > 9):
-            break
+#         if(i > 9):
+#             break
 
         X_ori[i*bz:(i+1)*bz, :] = data
         Y_test[i*bz:(i+1)*bz] = target
@@ -124,18 +120,11 @@ if args.data_set == 'test':
         X_fgsm[i*bz:(i+1)*bz,:], a = fgsm_adaptive_iter(model, data, target, args.eps, iter=args.iter)
         iter_fgsm += a
         
-        #X_deepfool[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=args.norm, iter=args.iter)
-        iter_dp += a
+        X_deepfool1[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=1, iter=args.iter)
+        iter_dp1 += a
         
-        X_tr_first[i*bz:(i+1)*bz,:], a = xp_attack_iter(model, data, target, args.eps,c=args.classes ,p=args.norm, iter=args.iter)
-        iter_tr_first += a
-        
-        X_tr_first_adp[i*bz:(i+1)*bz,:], a = xp_attack_adaptive_iter(model, data, target, args.eps,c=args.classes,p=args.norm, iter=args.iter)
-        iter_tr_first_adp += a
-        if args.second_order_attack:
-            print('second')
-            X_tr_second[i*bz:(i+1)*bz,:], a = xp_attack_tr_lc_parallel_iter(model, data, target, args.eps, c=args.classes,  iter=args.iter//5, lanczos_step=2)
-            iter_tr_second += a
+        X_deepfool2[i*bz:(i+1)*bz,:], a = deep_fool_iter(model, data, target,c=args.classes, p=2, iter=args.iter)
+        iter_dp2 += a
 
         print('current iteration: ', i)
 
@@ -143,31 +132,28 @@ if args.data_set == 'test':
     if not os.path.exists('generate_data'):
         os.makedirs('generate_data')
 
-    torch.save([X_ori, X_fgsm, X_deepfool, X_tr_first, X_tr_first_adp, X_tr_second, Y_test], 'generate_data/'+args.arch.lower()+str(args.norm)+'.pt',)    
+#     torch.save([X_ori, X_fgsm, X_deepfool, X_tr_first, X_tr_first_adp, X_tr_second, Y_test], 'generate_data/'+args.arch.lower()+str(args.norm)+'.pt',)    
 
 
-print('iters: ', iter_fgsm, iter_dp, iter_tr_first, iter_tr_first_adp, iter_tr_second)
+print('iters: ', iter_fgsm, iter_dp1, iter_dp2)
 print('total_time: ', time.time()-stat_time)
 
 
 
-result_acc = np.zeros(9)
-result_ent = np.zeros(9)
-result_dis = np.zeros(9)
-result_large = np.zeros(9)
+result_acc = np.zeros(4)
+result_ent = np.zeros(4)
+result_dis = np.zeros(4)
+result_large = np.zeros(4)
 
 result_acc[0], result_ent[0] = test_ori(model, test_loader, args)
 result_acc[1], result_ent[1] = test(X_fgsm, Y_test, model, args)
-result_acc[2], result_ent[2] = test(X_deepfool, Y_test, model, args)
-result_acc[3], result_ent[3] = test(X_tr_first, Y_test, model, args)
-result_acc[4], result_ent[4] = test(X_tr_first_adp, Y_test, model, args)
-result_acc[5], result_ent[5] = test(X_tr_second, Y_test, model, args)
+result_acc[2], result_ent[2] = test(X_deepfool1, Y_test, model, args)
+result_acc[3], result_ent[3] = test(X_deepfool2, Y_test, model, args)
+
 
 result_dis[1],result_large[1]= distance(X_fgsm,X_ori, args)
-result_dis[2],result_large[2]= distance(X_deepfool,X_ori, args)
-result_dis[3],result_large[3]= distance(X_tr_first,X_ori, args)
-result_dis[4],result_large[4]= distance(X_tr_first_adp,X_ori, args)
-result_dis[5],result_large[5]= distance(X_tr_second,X_ori, args)
+result_dis[2],result_large[2]= distance(X_deepfool1,X_ori, args)
+result_dis[3],result_large[3]= distance(X_deepfool2,X_ori, args)
 
 
 print('Accuracy: ', np.round(result_acc, 3))
