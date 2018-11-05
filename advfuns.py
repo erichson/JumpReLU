@@ -55,13 +55,13 @@ def test(adv_data, Y_test, model, args):
 
 
 
-def distance(X_adv, X_prev, norm):
+def distance(X_adv, X_prev, norm=2):
     n = len(X_adv)
     dis = 0.
     large_dis = 0.
     for i in range(n):
         if norm == 2:
-            tmp_dis = torch.norm(X_adv[i,:]-X_prev[i,:],p=2)/torch.norm(X_prev[i,:], p=2)
+            tmp_dis = torch.norm(X_adv[i,:]-X_prev[i,:],p=norm)/torch.norm(X_prev[i,:], p=norm)
         if norm == 1:
             tmp_dis = torch.max(torch.abs(X_adv[i,:]-X_prev[i,:]))/torch.max(torch.abs(X_prev[i,:]))
         dis += tmp_dis
