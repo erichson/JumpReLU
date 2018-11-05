@@ -53,6 +53,8 @@ parser.add_argument('--second-order-attack', type=int, default=0, help='second o
 
 parser.add_argument('--iter', type=int, default=100, help='number of iterations')
 
+parser.add_argument('--shift', type=float, default=0.0, metavar='E', help='shift value')
+
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 torch.manual_seed(args.seed)
@@ -78,8 +80,8 @@ for arg in vars(args):
 # get model 
 #==============================================================================
 model_list = {
-    'JumpNet': JumpNet(),
-    'JumpNet_EMNIST': JumpNet_EMNIST()
+    'JumpNet': JumpNet(shift=args.shift),
+    'JumpNet_EMNIST': JumpNet_EMNIST(shift=args.shift)
 }
 
 
@@ -151,9 +153,9 @@ result_acc[2], result_ent[2] = test(X_deepfool1, Y_test, model, args)
 result_acc[3], result_ent[3] = test(X_deepfool2, Y_test, model, args)
 
 
-result_dis[1],result_large[1]= distance(X_fgsm,X_ori, args)
-result_dis[2],result_large[2]= distance(X_deepfool1,X_ori, args)
-result_dis[3],result_large[3]= distance(X_deepfool2,X_ori, args)
+result_dis[1],result_large[1]= distance(X_fgsm,X_ori, norm=1)
+result_dis[2],result_large[2]= distance(X_deepfool1,X_ori, norm=1)
+result_dis[3],result_large[3]= distance(X_deepfool2,X_ori, norm=2)
 
 
 print('Accuracy: ', np.round(result_acc, 3))

@@ -75,24 +75,26 @@ class JumpNet(nn.Module):
 
 
 class JumpNet_EMNIST(nn.Module):
-    def __init__(self):
+    def __init__(self, shift=0.):
         super(JumpNet_EMNIST, self).__init__()
+        
+        self.shift = shift
         
         self.features = nn.Sequential(
             nn.Conv2d(1, 3, kernel_size=1),# 32x32x3 -> 32x32x64
-            JumpReLU(), 
+            JumpReLU(shift=self.shift), 
             nn.Conv2d(3, 10, kernel_size=5),# 32x32x3 -> 32x32x64
-            JumpReLU(),
+            JumpReLU(shift=self.shift),
             nn.MaxPool2d(2),
             nn.Conv2d(10, 20, kernel_size=5),# 16x16x64 -> 16x16x64
-            JumpReLU(),
+            JumpReLU(shift=self.shift),
             nn.MaxPool2d(2),# 16x16x64 -> 8x8x64
             nn.Dropout()
         )
         
         self.classifier = nn.Sequential(
             nn.Linear(320, 200),
-            JumpReLU(),
+            JumpReLU(shift=self.shift),
             nn.Linear(200, 48),
         )
 

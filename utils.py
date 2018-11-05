@@ -49,14 +49,14 @@ def getData(name='cifar10', train_bs=128, test_bs=1000):
             datasets.EMNIST('../data', train=True, download=True, split='balanced',
                            transform=transforms.Compose([
                                transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
+                               transforms.Normalize((0.1751,), (0.3267,))
                            ])),
             batch_size=train_bs, shuffle=True)
     
         test_loader = torch.utils.data.DataLoader(
             datasets.EMNIST('../data', train=False, split='balanced', transform=transforms.Compose([
                                transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
+                               transforms.Normalize((0.1751,), (0.3267,))
                            ])),
             batch_size=test_bs, shuffle=False)
     
