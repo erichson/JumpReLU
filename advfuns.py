@@ -24,13 +24,15 @@ def test_ori(model, test_loader, args):
             pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
             correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
 
-    if(args.dataset == 'mnist'):
+    if(args.dataset == 'emnist'):
+        print('correct: ', correct / 18800.)
+        return correct/18800., total_ent/18800.
+            
+    else:
         print('correct: ', correct / 10000.)
         return correct/10000., total_ent/10000.
 
-    elif(args.dataset == 'emnist'):
-        print('correct: ', correct / 18800.)
-        return correct/18800., total_ent/18800.
+
 
 
 def test(adv_data, Y_test, model, args):

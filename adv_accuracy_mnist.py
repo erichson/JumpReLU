@@ -101,20 +101,22 @@ model.eval()
 
 stat_time = time.time()
 if args.data_set == 'test':
-    X_ori = torch.Tensor(10000, 1, 28, 28)
-    X_fgsm = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool1 = torch.Tensor(10000, 1, 28, 28)
-    X_deepfool2 = torch.Tensor(10000, 1, 28, 28)
+    if args.dataset == 'mnist':
+        num_data = 10000
+    else:
+        num_data = 18800
+    X_ori = torch.Tensor(num_data, 1, 28, 28)
+    X_fgsm = torch.Tensor(num_data, 1, 28, 28)
+    X_deepfool1 = torch.Tensor(num_data, 1, 28, 28)
+    X_deepfool2 = torch.Tensor(num_data, 1, 28, 28)
 
     iter_fgsm = 0.
     iter_dp1 = 0.
     iter_dp2 = 0.
 
-    Y_test = torch.LongTensor(10000)
+    Y_test = torch.LongTensor(num_data)
     
     for i, (data, target) in enumerate(test_loader):
-#         if(i > 9):
-#             break
 
         X_ori[i*bz:(i+1)*bz, :] = data
         Y_test[i*bz:(i+1)*bz] = target
@@ -158,7 +160,7 @@ result_dis[2],result_large[2]= distance(X_deepfool1,X_ori, norm=1)
 result_dis[3],result_large[3]= distance(X_deepfool2,X_ori, norm=2)
 
 
-print('Accuracy: ', np.round(result_acc, 3))
+print('Accuracy: ', np.round(result_acc, 4))
 #print(result_ent)
-print('Noise Lev:', np.round(result_dis, 3))
+print('Noise Lev:', np.round(result_dis, 4))
 #print(result_large)

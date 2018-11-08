@@ -106,3 +106,42 @@ class JumpNet_EMNIST(nn.Module):
         x = self.classifier(x)
         
         return x
+
+    
+    
+class Net_CIFAR(nn.Module):
+    def __init__(self, shift=0.):
+        super(Net_CIFAR, self).__init__()
+        
+        self.shift = shift
+        
+        self.features = nn.Sequential(
+#             nn.Conv2d(3, 3, kernel_size=1),# 32x32x3 -> 32x32x64
+            nn.Conv2d(3, 64, kernel_size=3),# 32x32x3 -> 32x32x64
+            JumpReLU(shift=self.shift), 
+            nn.Conv2d(64, 64, kernel_size=3),# 32x32x3 -> 32x32x64
+            JumpReLU(shift=self.shift), 
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3),# 32x32x3 -> 32x32x64
+            JumpReLU(shift=self.shift),
+            nn.Conv2d(128, 128, kernel_size=3),
+            JumpReLU(shift=self.shift),
+            nn.MaxPool2d(2),
+        )
+        
+        self.classifier = nn.Sequential(
+            nn.Linear(5*5*128, 256),
+            JumpReLU(shift=self.shift),
+            nn.Linear(256, 256),
+            JumpReLU(shift=self.shift),
+            nn.Linear(256, 10),
+        )
+
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+        
+        return x

@@ -21,19 +21,19 @@ parser = argparse.ArgumentParser(description='PyTorch Example')
 #
 parser.add_argument('--name', type=str, default='cifar100', metavar='N', help='dataset')
 #
-parser.add_argument('--batch-size', type=int, default=512, metavar='N', help='input batch size for training (default: 64)')
+parser.add_argument('--batch-size', type=int, default=128, metavar='N', help='input batch size for training (default: 64)')
 #
-parser.add_argument('--test-batch-size', type=int, default=200, metavar='N', help='input batch size for testing (default: 1000)')
+parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N', help='input batch size for testing (default: 1000)')
 #
-parser.add_argument('--epochs', type=int, default=160, metavar='N', help='number of epochs to train (default: 10)')
+parser.add_argument('--epochs', type=int, default=90, metavar='N', help='number of epochs to train (default: 10)')
 #
-parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.01)')
+parser.add_argument('--lr', type=float, default=0.02, metavar='LR', help='learning rate (default: 0.01)')
 #
 parser.add_argument('--lr-decay', type=float, default=0.2, help='learning rate ratio')
 #
 parser.add_argument('--lr-schedule', type=str, default='normal', help='learning rate schedule')
 #
-parser.add_argument('--lr-decay-epoch', type=int, nargs='+', default=[80,120], help='Decrease learning rate at these epochs.')
+parser.add_argument('--lr-decay-epoch', type=int, nargs='+', default=[30,60], help='Decrease learning rate at these epochs.')
 #
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 #
@@ -73,7 +73,8 @@ print('data is loaded')
 #==============================================================================
 model_list = {
     'JumpNet': JumpNet(),
-    'JumpNet_EMNIST': JumpNet_EMNIST()
+    'JumpNet_EMNIST': JumpNet_EMNIST(),
+    'Net_CIFAR': Net_CIFAR()
 }
 
 
