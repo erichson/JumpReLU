@@ -14,13 +14,16 @@ from attack_method import *
 #from progressbar import *
 from wide_resnet import *
 from utils import *
+from data_tools import *
+
+
 from model import *
 
 import os
 
 from advfuns import *
 
-
+from prettytable import PrettyTable
 
 #==============================================================================
 # Attack settings
@@ -33,17 +36,15 @@ parser.add_argument('--no-cuda', action='store_true', default=False, help='disab
 
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 
-parser.add_argument('--norm', type=int, default=2, metavar='S', help='2')
-
 parser.add_argument('--classes', type=int, default=9, metavar='S', help='')
 
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='how many batches to wait before logging training status')
 
 parser.add_argument('--eps', type=float, default=0.01, metavar='E', help='how far to perturb input in the negative gradient sign')
 
-parser.add_argument('--arch', type=str, default='Net', help='choose an architecture')
+parser.add_argument('--arch', type=str, default='JumpNet', help='choose an architecture')
 
-parser.add_argument('--resume', type=str, default='net.pkl', help='choose an existing model')
+parser.add_argument('--resume', type=str, default='mnist_result/JumpNetbaseline1.pkl', help='choose an existing model')
 
 parser.add_argument('--dataset', type=str, default='mnist', help='chose dataset')
 
@@ -142,12 +143,15 @@ if args.data_set == 'test':
 print('iters: ', iter_fgsm, iter_dp1, iter_dp2)
 print('total_time: ', time.time()-stat_time)
 
+noisy_data = torch.Tensor(num_data, 1, 28, 28)
+
 
 
 result_acc = np.zeros(4)
 result_ent = np.zeros(4)
 result_dis = np.zeros(4)
 result_large = np.zeros(4)
+
 
 result_acc[0], result_ent[0] = test_ori(model, test_loader, args)
 result_acc[1], result_ent[1] = test(X_fgsm, Y_test, model, args)
@@ -160,7 +164,18 @@ result_dis[2],result_large[2]= distance(X_deepfool1,X_ori, norm=1)
 result_dis[3],result_large[3]= distance(X_deepfool2,X_ori, norm=2)
 
 
-print('Accuracy: ', np.round(result_acc, 4))
+#print('Accuracy: ', np.round(result_acc, 4))
 #print(result_ent)
-print('Noise Lev:', np.round(result_dis, 4))
+#print('Noise Lev:', np.round(result_dis, 4))
 #print(result_large)
+
+
+
+x = PrettyTable()
+
+x.field_names = [" ", "Clean Data", "IFGSM", "DeepFool (inf norm)", "DeepFool (2 norm)"]
+
+x.add_row(np.hstack(('Accuracy: ', np.round(result_acc, 4))))
+x.add_row(np.hstack(('Noise Lev: ', np.round(result_dis, 4))))
+
+print(x)

@@ -10,6 +10,7 @@ from torch.autograd import Variable
 
 from progressbar import *
 from utils import *
+from data_tools import *
 from model import *
 import os
 
@@ -19,7 +20,7 @@ import os
 
 parser = argparse.ArgumentParser(description='PyTorch Example')
 #
-parser.add_argument('--name', type=str, default='cifar100', metavar='N', help='dataset')
+parser.add_argument('--name', type=str, default='mnist', metavar='N', help='dataset')
 #
 parser.add_argument('--batch-size', type=int, default=128, metavar='N', help='input batch size for training (default: 64)')
 #
@@ -39,11 +40,14 @@ parser.add_argument('--seed', type=int, default=1, metavar='S', help='random see
 #
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
 #
-parser.add_argument('--arch', type=str, default='ResNet',  help='choose the architecture')
+parser.add_argument('--arch', type=str, default='JumpNet',  help='choose the architecture')
 #
 parser.add_argument('--large-ratio', type=int, default=1, metavar='N',  help='large ratio')
 #
 parser.add_argument('--depth', type=int, default=110, help='choose the depth of resnet')
+
+parser.add_argument('--shift', type=float, default=0.0, metavar='E', help='shift value')
+
 #
 args = parser.parse_args()
 
