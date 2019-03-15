@@ -32,40 +32,48 @@ def fgsm(model, data, target, eps):
     return X_adv
 
 
-
-def fgsm_iter(model, data, target, eps, iter=10):
+def fgsm_iter(model, data, target, eps, iterations=10):
     """
     iteration version of fgsm
     """
     
-    X_adv = fgsm(model, data, target, eps/iter)
-    for i in range(iter-1):
-    	X_adv = fgsm(model, X_adv, target, eps/iter)
+    X_adv = fgsm(model, data, target, eps)
+    for i in range(iterations):
+    	X_adv = fgsm(model, X_adv, target, eps)
+        
     return X_adv
 
 
 
-def fgsm_adaptive_iter(model, data, target, eps, iter):
+
+def fgsm_adaptive_iter(model, data, target, eps, iterations):
     update_num = 0
     i = 0
     while True:
-        if i >= iter:
+        if i >= iterations:
             print('failed to fool all the image')
             data = Variable(data)
             break
+        
         model.eval()
         data, target = data.cuda(), target.cuda()
         model.zero_grad()
         output = model(data)
 
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
-        tmp_mask = pred.view_as(target)==target.data # get index
+        tmp_mask = pred.view_as(target) == target.data # get index
         update_num += torch.sum(tmp_mask.long())
+        
+        #print(torch.sum(tmp_mask.long()))
         if torch.sum(tmp_mask.long()) < 1: # allowed fail
             break
+        
         attack_mask = tmp_mask.nonzero().view(-1)
         data[attack_mask,:] = fgsm(model, data[attack_mask,:], target[attack_mask], eps)
+        #data = fgsm(model, data, target, eps)
+        
         i += 1
+        
     return data.data, update_num
 
 
@@ -116,8 +124,10 @@ def deep_fool(model, data, c=9, p=2):
     per, index = torch.min(pers,1) # batch_size x 1
     #print('maximum pert: ', torch.max(per))
     update = grads[index,range(len(data)),:] - true_grad.data
+    
     if p == 1:
         update = torch.sign(update)
+    
     elif p ==2:
         update = update.view(n,-1)
         update = update / (torch.norm(update, p=2, dim=1).view(n,1)+1e-6)
@@ -127,10 +137,10 @@ def deep_fool(model, data, c=9, p=2):
 
 
 
-def deep_fool_iter(model, data, target,c=9, p=2, iter=10):
+def deep_fool_iter(model, data, target, c=9, p=2, iterations=10):
     X_adv = data.cuda() + 0.0
     update_num = 0.
-    for i in range(iter):
+    for i in range(iterations):
         model.eval()
         Xdata, Xtarget = X_adv, target.cuda()
         Xdata, Xtarget = Variable(Xdata, requires_grad=True), Variable(Xtarget)
@@ -145,4 +155,5 @@ def deep_fool_iter(model, data, target,c=9, p=2, iter=10):
         #print (i, ': ', torch.sum(tmp_mask.long()))
         attack_mask = tmp_mask.nonzero().view(-1)
         X_adv[attack_mask,:] = deep_fool(model, X_adv[attack_mask,:], c=c, p=p)
+    model.zero_grad()
     return X_adv, update_num
