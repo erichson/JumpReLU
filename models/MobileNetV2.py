@@ -49,7 +49,7 @@ class Block(nn.Module):
 class MobileNetV2(nn.Module):
     # (expansion, out_planes, num_blocks, stride)
     cfg = [(1,  16, 1, 1),
-           (6,  24, 2, 2),  # NOTE: change stride 2 -> 1 for CIFAR10
+           (6,  24, 2, 1),  # NOTE: change stride 2 -> 1 for CIFAR10
            (6,  32, 3, 2),
            (6,  64, 4, 2),
            (6,  96, 3, 1),
