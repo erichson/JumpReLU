@@ -55,6 +55,9 @@ parser.add_argument('--runs', type=int, default=1, help='number of simulations')
 
 parser.add_argument('--depth', type=int, default=20, help='choose the depth of resnet')
 #
+#
+parser.add_argument('--id', type=str, default='det', help='identifier for saving results')
+#
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -277,15 +280,8 @@ for jump in args.jump:
                        "DeepFool_two": time_deepfool_two})
         attack_time = attack_time.append(s, ignore_index=True)    
 
-        if args.dataset == 'mnist':
-
-            accuracy.to_pickle("results/mnist_accuracy.pkl")
-            relative.to_pickle("results/mnist_relative.pkl")
-            absolute.to_pickle("results/mnist_absolute.pkl")
-            attack_time.to_pickle("results/mnist_time.pkl")
+        accuracy.to_pickle("results/" + args.arch + "_" + "accuracy" + "_" + args.id + ".pkl")
+        relative.to_pickle("results/" + args.arch + "_" + "relative" + "_" + args.id + ".pkl")
+        absolute.to_pickle("results/" + args.arch + "_" + "absolute" + "_" + args.id + ".pkl")
+        attack_time.to_pickle("results/" + args.arch + "_" + "time" + "_" + args.id + ".pkl")
             
-        elif args.dataset == 'cifar10':
-            accuracy.to_pickle("results/cifar_accuracy.pkl")
-            relative.to_pickle("results/cifar_relative.pkl")
-            absolute.to_pickle("results/cifar_absolute.pkl")
-            attack_time.to_pickle("results/cifar_time.pkl")
