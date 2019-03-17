@@ -157,7 +157,7 @@ for jump in args.jump:
             X_ori[i*batchSize:(i+1)*batchSize, :] = data
             Y_test[i*batchSize:(i+1)*batchSize] = target
             
-            A = cw_attack(data.numpy()[0,:], target.numpy()[0], learning_rate=0.01)
+            A = cw_attack(data.numpy()[0,:], target.numpy()[0], learning_rate=0.01, max_iterations=args.iter)
             #if isinstance(A, np.ndarray):
             if type(A).__module__ == np.__name__:
                 print('correct attack')
