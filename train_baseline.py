@@ -52,6 +52,10 @@ parser.add_argument('--arch', type=str, default='LeNetLike',  help='Choose the a
 parser.add_argument('--depth', type=int, default=20, help='Choose the depth of resnet')
 #
 parser.add_argument('--jump', type=float, default=0.0, metavar='E', help='Jump value')
+#
+parser.add_argument('--quant', type=int, default=1, metavar='E', help='Quantization level')
+#
+parser.add_argument('--widen_factor', type=int, default=1, metavar='E', help='Widen factor')
 
 #
 args = parser.parse_args()
@@ -83,8 +87,9 @@ print('data is loaded')
 model_list = {
         'LeNetLike': LeNetLike(jump=args.jump),
         'AlexLike': AlexLike(jump=args.jump),
-        'JumpResNet': JumpResNet(depth=args.depth, jump=args.jump),
-        'MobileNetV2': MobileNetV2(jump=args.jump),      
+        #'ResNet': ResNet(depth=args.depth, jump=args.jump),
+        'MobileNetV2': MobileNetV2(jump=args.jump), 
+        'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=args.quant, jump=args.jump), 
 }
 
 

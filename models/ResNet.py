@@ -93,10 +93,10 @@ class Bottleneck(nn.Module):
         return out
 
 ALPHA_ = 1
-class JumpResNet(nn.Module):
+class ResNet(nn.Module):
 
     def __init__(self, depth, num_classes = 10, jump=0.0):
-        super(JumpResNet, self).__init__()
+        super(ResNet, self).__init__()
         # Model type specifies number of layers for CIFAR-10 model
         assert (depth - 2) % 6 == 0, 'depth should be 6n+2'
         n = (depth - 2) // 6
