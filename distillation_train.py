@@ -20,7 +20,7 @@ import os
 
 parser = argparse.ArgumentParser(description='PyTorch Example')
 #
-parser.add_argument('--name', type=str, default='cifar100', metavar='N', help='dataset')
+parser.add_argument('--name', type=str, default='cifar10', metavar='N', help='dataset')
 #
 parser.add_argument('--batch-size', type=int, default=128, metavar='N', help='input batch size for training (default: 64)')
 #
@@ -28,7 +28,7 @@ parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N', he
 #
 parser.add_argument('--epochs', type=int, default=90, metavar='N', help='number of epochs to train (default: 10)')
 #
-parser.add_argument('--lr', type=float, default=0.02, metavar='LR', help='learning rate (default: 0.01)')
+parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.01)')
 #
 parser.add_argument('--lr-decay', type=float, default=0.2, help='learning rate ratio')
 #
@@ -40,7 +40,7 @@ parser.add_argument('--seed', type=int, default=1, metavar='S', help='random see
 #
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
 #
-parser.add_argument('--arch', type=str, default='ResNet',  help='choose the architecture')
+parser.add_argument('--arch', type=str, default='JumpResNet',  help='choose the architecture')
 #
 parser.add_argument('--large-ratio', type=int, default=1, metavar='N',  help='large ratio')
 #
@@ -55,7 +55,7 @@ parser.add_argument('--temp', '--tp', default=100, type=float, metavar='T', help
 #
 args = parser.parse_args()
 
-
+args.cuda=True
 
 #==============================================================================
 # set random seed to reproduce the work
@@ -134,7 +134,7 @@ inner_loop = 0
 num_updates = 0
 
 Temp = args.temp
-Fs = nn.Softmax()
+#Fs = F.softmax()
 
 for epoch in range(1, args.epochs + 1):
     print('Current Epoch: ', epoch)
@@ -151,10 +151,10 @@ for epoch in range(1, args.epochs + 1):
         data, target = data.cuda(), target.cuda()
         with torch.no_grad():
             output1 = model1(data) / Temp
-            output1 = Fs(output1)
+            output1 = F.softmax(output1, dim=1)
 
         output2 = model2(data) / Temp
-        output2 = Fs(output2)
+        output2 = F.softmax(output2, dim=1)
      
         optimizer.zero_grad()
         loss = -torch.sum(output1 * torch.log(output2+1e-6))/len(target)
@@ -168,7 +168,7 @@ for epoch in range(1, args.epochs + 1):
         progress_bar(batch_idx, len(train_loader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                      % (train_loss/total_num, 100.*correct/total_num, correct, total_num))
         
-    test(model2, test_loader)   
+    test_ori(model2, test_loader, 10000, args)   
     optimizer=exp_lr_scheduler(epoch, optimizer, strategy=args.lr_schedule, decay_eff=args.lr_decay, decayEpoch=args.lr_decay_epoch)
 
-torch.save(model2.state_dict(), args.name + '_result/'+args.arch+'distillation_n'+'.pkl')  
+torch.save(model2.state_dict(), args.name + '_result/'+args.arch+'_distillation'+'.pkl')  

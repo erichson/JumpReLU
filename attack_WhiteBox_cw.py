@@ -32,7 +32,7 @@ import foolbox as fb
 #==============================================================================
 parser = argparse.ArgumentParser(description='Attack Example for MNIST')
 
-parser.add_argument('--test-batch-size', type=int, default=2000, metavar='N', help='input batch size for testing (default: 1000)')
+parser.add_argument('--test-batch-size', type=int, default=1, metavar='N', help='input batch size for testing (default: 1000)')
 
 parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
 
@@ -120,13 +120,13 @@ for jump in args.jump:
     #==============================================================================
     for irun in range(args.runs):
         if args.dataset == 'mnist':
-            num_data = 10000
+            num_data = 1000
             num_class = 9
 
             X_ori = torch.Tensor(num_data, 1, 28, 28)
             X_fgsm = torch.Tensor(num_data, 1, 28, 28)
-            CLIP_MIN = 0.4243
-            CLIP_MAX = 2.8215 
+            CLIP_MIN = -0.425
+            CLIP_MAX = 2.822 
         elif args.dataset == 'cifar10':
             num_data = 100
             num_class = 9
@@ -150,14 +150,20 @@ for jump in args.jump:
         
         
         
-        print('Run IFGSM')
+        print('Run CW')
         stat_time = time.time()
         for i, (data, target) in enumerate(test_loader):
-        
+            print('Current %d' %i) 
             X_ori[i*batchSize:(i+1)*batchSize, :] = data
             Y_test[i*batchSize:(i+1)*batchSize] = target
             
-            X_fgsm[i*batchSize:(i+1)*batchSize,:] = torch.from_numpy(cw_attack(data.numpy()[0,:], target.numpy()[0], learning_rate=0.01))
+            A = cw_attack(data.numpy()[0,:], target.numpy()[0], learning_rate=0.01)
+            #if isinstance(A, np.ndarray):
+            if type(A).__module__ == np.__name__:
+                print('correct attack')
+                X_fgsm[i*batchSize:(i+1)*batchSize,:] = torch.from_numpy(A)
+            else:
+                X_fgsm[i*batchSize:(i+1)*batchSize,:] = data 
 
             if i == num_data:
                 break
@@ -189,8 +195,8 @@ for jump in args.jump:
         #***********************
         # Print results
         #***********************
-        print(result_acc)
-        print(result_dis)
-        print(result_dis_abs)
+        print(result_acc[1])
+        print(result_dis[2])
+        #print(result_dis_abs)
         
         
