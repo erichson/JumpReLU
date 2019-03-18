@@ -6,7 +6,7 @@ import torch.nn.init as init
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-import sys
+#import sys
 import numpy as np
 
 from activationfun import *
@@ -66,11 +66,6 @@ class WideResNet(nn.Module):
         print('| Wide-Resnet %dx%d' %(depth, k))
         nStages = [16, 16*k, 32*k, 64*k]
 
-#        self.transform = nn.Sequential(
-#            nn.Conv2d(3*level, 18, kernel_size=1, stride=1),
-#            nn.Sigmoid()
-#            )
-
         self.conv1 = conv3x3(3,nStages[0])
         self.layer1 = self._wide_layer(wide_basic, nStages[1], n, dropout_rate, stride=1, jump = self.jump)
         self.layer2 = self._wide_layer(wide_basic, nStages[2], n, dropout_rate, stride=2, jump = self.jump)
@@ -89,7 +84,6 @@ class WideResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        #out = self.transform(x)
         out = self.conv1(x)
         out = self.layer1(out)
         out = self.layer2(out)
@@ -100,3 +94,63 @@ class WideResNet(nn.Module):
         out = self.linear(out)
 
         return out
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+class WideResNetThermo(nn.Module):
+    def __init__(self, depth, widen_factor, dropout_rate, num_classes,level, jump=0.0):
+        super(WideResNetThermo, self).__init__()
+        self.in_planes = 16
+
+        self.jump = jump
+        self.JumpReLU = JumpReLU(jump=self.jump)
+
+
+        assert ((depth-4)%6 == 0), 'Wide-resnet depth should be 6n+4'
+        n = int((depth-4)/6)
+        k = widen_factor
+
+        print('| Wide-Resnet %dx%d' %(depth, k))
+        nStages = [16, 16*k, 32*k, 64*k]
+        self.transform = nn.Sequential(
+            nn.Conv2d(3*level,18,kernel_size=1,stride=1),
+            nn.Sigmoid()
+        )
+        self.conv1 = conv3x3(18,nStages[0])
+        self.layer1 = self._wide_layer(wide_basic, nStages[1], n, dropout_rate, stride=1, jump = self.jump)
+        self.layer2 = self._wide_layer(wide_basic, nStages[2], n, dropout_rate, stride=2, jump = self.jump)
+        self.layer3 = self._wide_layer(wide_basic, nStages[3], n, dropout_rate, stride=2, jump = self.jump)
+        self.bn1 = nn.BatchNorm2d(nStages[3], momentum=0.9)
+        self.linear = nn.Linear(nStages[3], num_classes)
+
+    def _wide_layer(self, block, planes, num_blocks, dropout_rate, stride, jump = 0.0):
+        strides = [stride] + [1]*(num_blocks-1)
+        layers = []
+
+        for stride in strides:
+            layers.append(block(self.in_planes, planes, dropout_rate, stride, jump = jump))
+            self.in_planes = planes
+
+        return nn.Sequential(*layers)
+
+    def forward(self, channel0,channel1,channel2):
+        x = torch.cat((channel0,channel1,channel2),dim=1)
+        out = self.transform(x)
+        out = self.conv1(out)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.JumpReLU(self.bn1(out))
+        out = F.avg_pool2d(out, 8)
+        out = out.view(out.size(0), -1)
+        out = self.linear(out)
+
+        return out    
+    

@@ -21,6 +21,11 @@ from models import *
 
 from progressbar import *
 
+from attack_method import *
+
+from encoder import encoder
+
+
 #==============================================================================
 # Training settings
 #==============================================================================
@@ -52,8 +57,14 @@ parser.add_argument('--arch', type=str, default='LeNetLike',  help='Choose the a
 parser.add_argument('--depth', type=int, default=20, help='Choose the depth of resnet')
 #
 parser.add_argument('--jump', type=float, default=0.0, metavar='E', help='Jump value')
-##
-parser.add_argument('--widen_factor', type=int, default=4, metavar='E', help='Widen factor')
+#
+parser.add_argument('--level', type=int, default=1, metavar='E', help='Image quantization level')
+#
+parser.add_argument('--widen_factor', type=int, default=1, metavar='E', help='Widen factor')
+
+parser.add_argument('--adv_ratio', type=float, default=0.2, metavar='E', help='amount of adverserial training')
+
+parser.add_argument('--eps', type=float, default=0.05, metavar='E', help='FGSM epsilon')
 
 #
 args = parser.parse_args()
@@ -83,11 +94,7 @@ print('data is loaded')
 # get model and optimizer
 #==============================================================================
 model_list = {
-        'LeNetLike': LeNetLike(jump=args.jump),
-        'AlexLike': AlexLike(jump=args.jump),
-        #'ResNet': ResNet(depth=args.depth, jump=args.jump),
-        'MobileNetV2': MobileNetV2(jump=args.jump), 
-        'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=1, jump=args.jump), 
+        'WideResNetThermo': WideResNetThermo(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=args.level, jump=args.jump), 
 }
 
 
@@ -109,6 +116,7 @@ print(model)
 criterion = nn.CrossEntropyLoss() 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
 
+encoder = encoder(level=args.level)
 
 for epoch in range(1, args.epochs + 1):
     print('Current Epoch: ', epoch)
@@ -120,9 +128,16 @@ for epoch in range(1, args.epochs + 1):
         if data.size()[0] < args.batch_size:
             continue
         
+        channel0,channel1,channel2 = data.numpy()[:,0,:,:], data.numpy()[:,1,:,:], data.numpy()[:,2,:,:]
+        channel0,channel1,channel2 = encoder.tempencoding(channel0), encoder.tempencoding(channel1), encoder.tempencoding(channel2)
+        channel0, channel1, channel2 = torch.Tensor(channel0), torch.Tensor(channel1), torch.Tensor(channel2)
+        channel0, channel1, channel2, target = Variable(channel0.cuda()),Variable(channel1.cuda()),Variable(channel2.cuda()), Variable(target.cuda())       
+        
+        optimizer.zero_grad()
+        
+        
         model.train()
-        data, target = data.cuda(), target.cuda()
-        output = model(data)
+        output = model(channel0, channel1, channel2)
         loss = criterion(output, target)
         loss.backward()
         train_loss += loss.item()*target.size()[0]
@@ -144,8 +159,29 @@ for epoch in range(1, args.epochs + 1):
     correct = 0
     total_num = 0
     for data, target in test_loader:
-        data, target = data.cuda(), target.cuda()
-        output = model(data)
+        
+        # Robust Training Block
+        if args.adv_ratio > 1. / args.batch_size:
+            adv_r = max(int(args.batch_size * args.adv_ratio), 1)
+            model.eval() # set flag so that Batch Norm statistics would not be polluted with fgsm
+            
+            data = fgsm(model, data[:adv_r], target[:adv_r], args.eps)
+
+            
+            model.train() # set flag to train for Batch Norm
+            model.zero_grad()        
+
+        else:
+            model.train()
+            data = data          
+        
+        
+        channel0,channel1,channel2=data.numpy()[:,0,:,:],data.numpy()[:,1,:,:],data.numpy()[:,2,:,:]
+        channel0,channel1,channel2 = encoder.tempencoding(channel0),encoder.tempencoding(channel1),encoder.tempencoding(channel2)
+        channel0, channel1, channel2 = torch.Tensor(channel0),torch.Tensor(channel1),torch.Tensor(channel2)
+        channel0, channel1, channel2, target = Variable(channel0.cuda()),Variable(channel1.cuda()),Variable(channel2.cuda()), Variable(target.cuda())
+        
+        output = model(channel0, channel1, channel2)
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
         total_num += len(data)

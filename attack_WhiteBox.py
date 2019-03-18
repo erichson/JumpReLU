@@ -58,6 +58,7 @@ parser.add_argument('--depth', type=int, default=20, help='choose the depth of r
 #
 parser.add_argument('--id', type=str, default='det', help='identifier for saving results')
 #
+parser.add_argument('--widen_factor', type=int, default=4, metavar='E', help='Widen factor')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -99,8 +100,9 @@ for jump in args.jump:
     model_list = {
             'LeNetLike': LeNetLike(jump = jump),
             'AlexLike': AlexLike(jump = jump),
-            'JumpResNet': JumpResNet(depth=args.depth, jump = jump),
-            'MobileNetV2': MobileNetV2(jump = jump),      
+            #'JumpResNet': JumpResNet(depth=args.depth, jump = jump),
+            'MobileNetV2': MobileNetV2(jump = jump),     
+            'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=1, jump=jump),          
     }
     
     
