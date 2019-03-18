@@ -98,7 +98,7 @@ print('data is loaded')
 model_list = {
         'LeNetLike': LeNetLike(jump=args.jump),
         'AlexLike': AlexLike(jump=args.jump),
-        #'ResNet': ResNet(depth=args.depth, jump=args.jump),
+        'ResNet': ResNet(depth=20, jump=args.jump),
         'MobileNetV2': MobileNetV2(jump=args.jump), 
         'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=args.dropout, num_classes=10, level=1, jump=args.jump), 
 }

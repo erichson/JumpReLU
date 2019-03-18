@@ -100,7 +100,7 @@ for jump in args.jump:
     model_list = {
             'LeNetLike': LeNetLike(jump = jump),
             'AlexLike': AlexLike(jump = jump),
-            #'ResNet': ResNet(depth=args.depth, jump = jump),
+            'ResNet': ResNet(depth=20, jump = jump),
             'MobileNetV2': MobileNetV2(jump = jump),     
             'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=1, jump=jump),          
     }
