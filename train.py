@@ -52,7 +52,7 @@ parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float, metavar=
 #
 parser.add_argument('--arch', type=str, default='JumpNet',  help='choose the architecture')
 #
-parser.add_argument('--depth', type=int, default=20, help='choose the depth of resnet')
+parser.add_argument('--depth', type=int, default=34, help='choose the depth for wide resnet')
 #
 parser.add_argument('--jump', type=float, default=0.0, metavar='E', help='jump value')
 
