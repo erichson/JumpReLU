@@ -11,7 +11,7 @@ from copy import deepcopy
 from models import *
 from attack_method_lid import fgsm, fgsm_adaptive_iter, deep_fool_iter 
 from utils import *
-
+from progressbar import progress_bar
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -21,7 +21,7 @@ import torch.backends.cudnn as cudnn
 import torchvision
 import torchvision.transforms as transforms
 
-from lidutils import (get_data, get_noisy_samples, get_mc_predictions,
+from lidutils import (get_noisy_samples, get_mc_predictions,
                       get_deep_representations, score_samples, normalize,
                       get_lids_random_batch, get_kmeans_random_batch, transform_data)
 
@@ -189,7 +189,7 @@ def get_lid(model, X_test, X_test_noisy, X_test_adv, X_targets, device, k=10, ba
             labels: adversarial (label: 1) and normal/noisy (label: 0) examples
     """
     print('Extract local intrinsic dimensionality: k = %s' % k)
-    lids_normal, lids_noisy, lids_adv = get_lids_random_batch(model, None, X_test, X_test_noisy,
+    lids_normal, lids_noisy, lids_adv = get_lids_random_batch(model, X_test, X_test_noisy,
                                                               X_test_adv, X_targets, dataset, device, 
                                                               k, batch_size, detector_type)
     print("lids_normal:", lids_normal.size())
@@ -284,7 +284,7 @@ def main(args):
     model.eval()
     
     #Initial test
-    trainloader, testloader = getData(name=args.dataset, train_bs=args.batch_size, test_bs=args.batch_size)
+    trainloader, testloader = getData(name=args.dataset, train_bs=1, test_bs=1)
     
     # Check attack type, select adversarial and noisy samples accordingly
     print('Loading noisy and adversarial samples...')
@@ -304,9 +304,10 @@ def main(args):
         # step here instead of the adversarial step which can take many hours
         noisy_file = os.path.join(args.data_path, 'Noisy_%s_%s.pth' % (args.dataset, args.attack))
         X_test = torch.empty(X_test_adv.size())
-        for i, (x, _) in enumerate(testset):
+        for i, (x, _) in enumerate(testloader):
             X_test[i] = x.clone()
-        if os.path.isfile(noisy_file):
+        #if os.path.isfile(noisy_file):
+        if False:
             X_test_noisy = torch.load(noisy_file)
         else:
             # Craft an equal number of noisy samples
@@ -329,10 +330,7 @@ def main(args):
         elif s_type == 'noisy':
             testset = transform_data(X_test_noisy, X_targets, args.batch_size)
         else:
-            if args.dataset == 'cifar10':
-                _, _, _, testset = get_cifar(args.batch_size)
-            else:
-                 _, _, _, testset = get_mnist(args.batch_size)
+            trainloader, testset = getData(name=args.dataset, train_bs=100, test_bs=100)
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(testset):
                 inputs, targets = inputs.to(device), targets.to(device)
@@ -497,6 +495,9 @@ if __name__ == "__main__":
         help="where do you want to store data",
         required=True, type=str
     )
+    parser.add_argument('--jump', 
+            #default=0.01, 
+            required=True, type=float)
     parser.set_defaults(batch_size=100)
     parser.set_defaults(k_nearest=20)
     args = parser.parse_args()
