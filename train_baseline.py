@@ -55,6 +55,8 @@ parser.add_argument('--jump', type=float, default=0.0, metavar='E', help='Jump v
 ##
 parser.add_argument('--widen_factor', type=int, default=4, metavar='E', help='Widen factor')
 
+parser.add_argument('--dropout', type=float, default=0.0, metavar='E', help='Dropout rate')
+
 #
 args = parser.parse_args()
 
@@ -87,7 +89,7 @@ model_list = {
         'AlexLike': AlexLike(jump=args.jump),
         #'ResNet': ResNet(depth=args.depth, jump=args.jump),
         'MobileNetV2': MobileNetV2(jump=args.jump), 
-        'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=1, jump=args.jump), 
+        'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=args.dropout, num_classes=10, level=1, jump=args.jump), 
 }
 
 
