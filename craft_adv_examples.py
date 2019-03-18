@@ -90,12 +90,12 @@ def craft_one_type(model, testloader, dataset, attack, batch_size, device):
             inputs, targets = inputs.to(device), targets.to(device)
             if batch_idx == 0:
                 Adv_data = deep_fool_iter(
-                    model, inputs, targets, c=9, p=1, iter=1000, worst_case = False)
+                    model, inputs, targets, c=9, p=1, iter=100, worst_case = False)
                 Adv_targets = targets
                 X = inputs
             else:
                 Adv_data = torch.cat((Adv_data, deep_fool_iter(
-                    model, inputs, targets, c=9, p=1, iter=1000, worst_case = False)), dim=0)
+                    model, inputs, targets, c=9, p=1, iter=100, worst_case = False)), dim=0)
                 Adv_targets = torch.cat((Adv_targets, targets), dim=0)
                 X = torch.cat((X, inputs), dim=0)
     elif attack == 'cw-l2':
@@ -181,13 +181,18 @@ def main(args):
             'AlexLike': AlexLike(jump = args.jump),
             #'JumpResNet': JumpResNet(depth=20, jump = args.jump),
             'MobileNetV2': MobileNetV2(jump = args.jump),      
+            'WideResNet': WideResNet(depth=34, widen_factor=4, dropout_rate=0., num_classes=10, level=1, jump=args.jump), 
     }
-    
+   
     
     model = model_list[args.arch]
     if args.cuda:
         model.cuda()
     
+    file_ = torch.load(args.resume)
+    #for i in file_:
+    #    print(i)
+
     model = torch.nn.DataParallel(model)
     model.load_state_dict(torch.load(args.resume))
     model.eval()

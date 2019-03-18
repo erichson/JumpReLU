@@ -11,7 +11,7 @@ import numpy as np
 
 from activationfun import *
 
-
+from copy import deepcopy
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=True)
@@ -72,6 +72,7 @@ class WideResNet(nn.Module):
         self.layer3 = self._wide_layer(wide_basic, nStages[3], n, dropout_rate, stride=2, jump = self.jump)
         self.bn1 = nn.BatchNorm2d(nStages[3], momentum=0.9)
         self.linear = nn.Linear(nStages[3], num_classes)
+        self.mode = 'normal'
 
     def _wide_layer(self, block, planes, num_blocks, dropout_rate, stride, jump = 0.0):
         strides = [stride] + [1]*(num_blocks-1)
@@ -83,17 +84,43 @@ class WideResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
+    def change_mode(self, mode):
+        assert(mode == 'normal' or mode == 'out_act')
+        self.mode = mode
+
     def forward(self, x):
+        bs = x.size(0)
+        output_list = [deepcopy(x.data)]
+        
         out = self.conv1(x)
-        out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
+        output_list.append(deepcopy(out.data))
+        
+        for i in range(len(self.layer1)):
+            out = self.layer1[i](out)
+            output_list.append(deepcopy(out.data))
+        
+        for i in range(len(self.layer2)):
+            out = self.layer2[i](out)
+            output_list.append(deepcopy(out.data))
+        
+        for i in range(len(self.layer3)):
+            out = self.layer3[i](out)
+            output_list.append(deepcopy(out.data))
+        
         out = self.JumpReLU(self.bn1(out))
+        output_list.append(deepcopy(out.data))
+        
         out = F.avg_pool2d(out, 8)
         out = out.view(out.size(0), -1)
+        
         out = self.linear(out)
+        output_list.append(deepcopy(out.data))
 
-        return out
+        if self.mode == 'normal':
+            return out 
+        elif self.mode == 'out_act':
+            output_list = [t.view(bs, -1) for t in output_list]
+            return out, output_list
     
     
     
