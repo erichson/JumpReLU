@@ -270,7 +270,7 @@ def main(args):
     model_list = {
             'LeNetLike': LeNetLike(jump = args.jump),
             'AlexLike': AlexLike(jump = args.jump),
-            'JumpResNet': JumpResNet(depth=20, jump = args.jump),
+            #'JumpResNet': JumpResNet(depth=20, jump = args.jump),
             'MobileNetV2': MobileNetV2(jump = args.jump),      
     }
     

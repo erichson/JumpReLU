@@ -57,12 +57,12 @@ def craft_one_type(model, testloader, dataset, attack, batch_size, device):
             inputs, targets = inputs.to(device), targets.to(device)
             if batch_idx == 0:
                 Adv_data = fgsm_adaptive_iter(
-                model, inputs, targets, eps=args.attack_eps, iter=2000)
+                model, inputs, targets, eps=args.attack_eps, iter=200)
                 Adv_targets = targets
                 X = inputs
             else:
                 Adv_data = torch.cat((Adv_data, fgsm_adaptive_iter(
-                    model, inputs, targets, eps=args.attack_eps, iter=2000)), dim=0)
+                    model, inputs, targets, eps=args.attack_eps, iter=200)), dim=0)
                 Adv_targets = torch.cat((Adv_targets, targets), dim=0)
                 X = torch.cat((X, inputs), dim=0)
     #TODO: Implement deep fool and tr_attack
@@ -179,7 +179,7 @@ def main(args):
     model_list = {
             'LeNetLike': LeNetLike(jump = args.jump),
             'AlexLike': AlexLike(jump = args.jump),
-            'JumpResNet': JumpResNet(depth=20, jump = args.jump),
+            #'JumpResNet': JumpResNet(depth=20, jump = args.jump),
             'MobileNetV2': MobileNetV2(jump = args.jump),      
     }
     
