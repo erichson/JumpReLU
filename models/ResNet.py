@@ -21,7 +21,7 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         
         self.jump = jump
-        self.relu_jump = JumpReLU(jump=self.jump)
+        self.JumpReLU = JumpReLU(jump=self.jump)
         
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -36,7 +36,7 @@ class BasicBlock(nn.Module):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu_jump(out)
+        out = self.JumpReLU(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
@@ -45,7 +45,7 @@ class BasicBlock(nn.Module):
             residual = self.downsample(x)
 
         out += residual
-        out = self.relu_jump(out)
+        out = self.JumpReLU(out)
 
         return out
 
@@ -57,7 +57,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         
         self.jump = jump
-        self.relu_jump = JumpReLU(jump=self.jump * 2.0)
+        self.JumpReLU = JumpReLU(jump=self.jump)
         
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size = 1, bias = False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -75,11 +75,11 @@ class Bottleneck(nn.Module):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu_jump(out)
+        out = self.JumpReLU(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
-        out = self.relu_jump(out)
+        out = self.JumpReLU(out)
 
         out = self.conv3(out)
         out = self.bn3(out)
@@ -93,10 +93,10 @@ class Bottleneck(nn.Module):
         return out
 
 ALPHA_ = 1
-class JumpResNet(nn.Module):
+class ResNet(nn.Module):
 
     def __init__(self, depth, num_classes = 10, jump=0.0):
-        super(JumpResNet, self).__init__()
+        super(ResNet, self).__init__()
         # Model type specifies number of layers for CIFAR-10 model
         assert (depth - 2) % 6 == 0, 'depth should be 6n+2'
         n = (depth - 2) // 6
@@ -104,7 +104,7 @@ class JumpResNet(nn.Module):
         block = Bottleneck if depth >= 44 else BasicBlock
 
         self.jump = jump
-        self.relu_jump = JumpReLU(jump=self.jump * 2.0)
+        self.JumpReLU = JumpReLU(jump=self.jump)
 
         self.inplanes = 16 * ALPHA_
         self.conv1 = nn.Conv2d(3, 16 * ALPHA_, kernel_size = 3, padding = 1,
@@ -145,7 +145,7 @@ class JumpResNet(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu_jump(x)    # 32x32
+        x = self.JumpReLU(x)    # 32x32
 
         x = self.layer1(x)  # 32x32
         x = self.layer2(x)  # 16x16

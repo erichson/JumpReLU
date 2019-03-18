@@ -60,12 +60,11 @@ parser.add_argument('--adv_ratio', type=float, default=0.2, metavar='E', help='a
 
 parser.add_argument('--eps', type=float, default=0.05, metavar='E', help='FGSM epsilon')
 
-parser.add_argument('--ndf', type=int, default=10, metavar='E', help='DeepFool iterations')
-
 parser.add_argument('--resume', type=int, default=0, help='resume pre trained model')
 
 parser.add_argument('--resume_path', type=str, default='mnist_result/JumpNetbaseline1.pkl', help='choose an existing model')
 
+parser.add_argument('--widen_factor', type=int, default=4, metavar='E', help='Widen factor')
 
 #
 args = parser.parse_args()
@@ -97,8 +96,9 @@ print('data is loaded')
 model_list = {
         'LeNetLike': LeNetLike(jump=args.jump),
         'AlexLike': AlexLike(jump=args.jump),
-        'JumpResNet': JumpResNet(depth=args.depth, jump=args.jump),
-        'MobileNetV2': MobileNetV2(jump=args.jump),      
+        #'JumpResNet': JumpResNet(depth=args.depth, jump=args.jump),
+        'MobileNetV2': MobileNetV2(jump=args.jump), 
+        'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=1, jump=args.jump), 
 }
 
 
@@ -143,25 +143,16 @@ for epoch in range(1, args.epochs + 1):
             adv_r = max(int(args.batch_size * args.adv_ratio), 1)
             model.eval() # set flag so that Batch Norm statistics would not be polluted with fgsm
             
-#            pick = np.random.choice(([0,1,2]))
-#            if pick == 0:
-#                adv_data = fgsm(model, data[:adv_r], target[:adv_r], args.eps)
-#            #elif pick == 1:
-#            #    adv_data, _ = deep_fool_iter(model, data[:adv_r], target[:adv_r], p=1, iter=args.ndf)
-#            elif pick == 2:
-#                adv_data, _ = deep_fool_iter(model, data[:adv_r], target[:adv_r], p=2, iter=args.ndf)
-
             adv_data = fgsm(model, data[:adv_r], target[:adv_r], args.eps)
 
-            
             model.train() # set flag to train for Batch Norm
             model.zero_grad()
             adv_data = torch.cat([adv_data.cpu(), data[adv_r:]])        
 
             
         else:
-                model.train()
-                adv_data = data        
+            model.train()
+            adv_data = data        
         
 
         adv_data, target = adv_data.cuda(), target.cuda()        
