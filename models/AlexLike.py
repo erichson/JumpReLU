@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from activationfun import *
 
+from copy import deepcopy
 # AlexLike Model definition
 class AlexLike(nn.Module):
     def __init__(self, jump=0.0):
@@ -21,21 +22,41 @@ class AlexLike(nn.Module):
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 10)
 
+        self.mode = 'normal'
+    
+    def change_mode(self, mode):
+        assert(mode == 'normal' or mode == 'out_act')
+        self.mode = mode
 
     def forward(self, x):
+        bs = x.size(0)
+        output_list = [deepcopy(x.data)]
+
         x = self.JumpReLU(self.conv1(x))
+        output_list.append(deepcopy(x.data))
         x = F.max_pool2d(self.JumpReLU(self.conv2(x)), 2)
+        output_list.append(deepcopy(x.data))
         
         x = self.JumpReLU(self.conv3(x))
+        output_list.append(deepcopy(x.data))
         x = F.max_pool2d(self.JumpReLU(self.conv4(x)), 2)
+        output_list.append(deepcopy(x.data))
 
         x = x.view(x.size(0), -1)
 
         x = F.dropout(x, training=self.training)        
         x = self.JumpReLU(self.fc1(x))
+        output_list.append(deepcopy(x.data))
         #x = F.dropout(x, training=self.training)                
         x = self.JumpReLU(self.fc2(x))
+        output_list.append(deepcopy(x.data))
         x = self.fc3(x)
-        return x   
+        
+        output_list.append(deepcopy(x.data))
+        if self.mode == 'normal':
+            return x
+        elif self.mode == 'out_act':
+            output_list = [t.view(bs, -1) for t in output_list]
+            return x, output_list
     
     

@@ -72,31 +72,6 @@ def transform_data(data, targets, batch_size):
                             targets[i*batch_size:]))
     return dataset
 
-def get_data(dataset='mnist'):
-    # Data
-    print('==> Preparing data..')
-    transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.bs, shuffle=True, num_workers=2)
-
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
-
-    print('Done Loading')
-
-    return trainset, trainloader, testset, testloader
-
 def lid_term(logits, batch_size=100):
     """Calculate LID loss term for a minibatch of logits
 
@@ -206,13 +181,12 @@ def get_noisy_samples(X_test, X_test_adv, dataset, attack, eps):
                       "automatically. For now, manually tune the scales around "
                       "mnist: L2/20.0, cifar: L2/54.0, svhn: L2/60.0")
         # Add Gaussian noise to the samples
-        print('Nosisy Average L2 Norm: ',torch.mean(torch.norm((X_test_adv - X_test).data.view(X_test.size(0), -1), p=2, dim=1)))
+        print('Adversarial Average L2 Norm: ',torch.mean(torch.norm((X_test_adv - X_test).data.view(X_test.size(0), -1), p=2, dim=1)))
         print(eps)
         X_test_noisy = torch.clamp(
-                #X_test + torch.randn(X_test.size())*eps,
             X_test + torch.tensor(np.random.normal(loc=0, scale=eps,
                                           size=X_test.size())).float(),
-            CLIP_MIN, CLIP_MAX)
+            torch.min(X_test.data), torch.max(X_test.data))
         print('Nosisy Average L2 Norm: ',torch.mean(torch.norm((X_test_noisy - X_test).data.view(X_test.size(0), -1), p=2, dim=1)))
     return X_test_noisy
 
@@ -347,7 +321,7 @@ def kmean_pca_batch(data, batch, k=10):
         a[i] = kmean_batch(tmp_pca[:-1], tmp_pca[-1], k=k)
     return a
 
-def get_lids_random_batch(model, autoencoder, X, X_noisy, X_adv, targets, dataset, device, k=10, batch_size=100, detector_type='lid'):
+def get_lids_random_batch(model, X, X_noisy, X_adv, targets, dataset, device, k=10, batch_size=100, detector_type='lid'):
     """
     Get the local intrinsic dimensionality of each Xi in X_adv
     estimated by k close neighbours in the random batch it lies in.
@@ -364,8 +338,6 @@ def get_lids_random_batch(model, autoencoder, X, X_noisy, X_adv, targets, datase
     # get deep representations
     model.module.change_mode('out_act')
     model.eval()
-    autoencoder.eval()
-    autoencoder.module.change_mode('out_act')
     test_normal = transform_data(X, targets, batch_size)
     test_noise = transform_data(X_noisy, targets, batch_size)
     test_adv = transform_data(X_adv, targets, batch_size)
@@ -380,102 +352,11 @@ def get_lids_random_batch(model, autoencoder, X, X_noisy, X_adv, targets, datase
             batch_adv = batch_adv.to(device)
 
             #Features using clean path
-            if detector_type in ['lid_f', 'ae_lid_f', 'all_lid_f']:
-                out_normal, act_normal = model(batch_normal, lid_f=True)
-                out_noise, act_noise = model(batch_noise, lid_f=True)
-                out_adv, act_adv = model(batch_adv, lid_f=True)
-            else:
-                out_normal, act_normal = model(batch_normal)
-                out_noise, act_noise = model(batch_noise)
-                out_adv, act_adv = model(batch_adv)
-            if detector_type == 'ae_lid':
-                n = act_normal[0].size()[0]
-                out_normal_a, act_normal_a = autoencoder(batch_normal)
-                lid_batch = torch.zeros(n, len(act_normal)+len(act_normal_a)+4)
-                lid_batch_adv = torch.zeros(n, len(act_normal)+len(act_normal_a)+4)
-                lid_batch_noisy = torch.zeros(n, len(act_normal)+len(act_normal_a)+4)
-#                 print(lid_batch.size())
-                for i in range(len(act_normal)):
-                    lid_batch[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_normal[i], k=k))
-                    lid_batch_adv[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_adv[i], k=k))
-                    lid_batch_noisy[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_noise[i], k=k))
-                    
-                    
-                #Adding feature of prediction and probability
-                normal_prob, normal_pred = F.softmax(out_normal.detach(), dim=1).max(1)
-                noise_prob, noise_pred = F.softmax(out_noise.detach(), dim=1).max(1)
-                adv_prob, adv_pred = F.softmax(out_adv.detach(), dim=1).max(1)
-                lid_batch[:, len(act_normal)] = normal_prob
-                lid_batch_adv[:, len(act_normal)] = noise_prob
-                lid_batch_noisy[:, len(act_normal)] = adv_prob
-                lid_batch[:, len(act_normal)+1] = normal_pred
-                lid_batch_adv[:, len(act_normal)+1] = noise_pred
-                lid_batch_noisy[:, len(act_normal)+1] = adv_pred
-                
-                #Features using autoencoder path
-                out_normal_a, act_normal_a = autoencoder(batch_normal)
-                out_noise_a, act_noise_a = autoencoder(batch_noise)
-                out_adv_a, act_adv_a = autoencoder(batch_adv)
-                for i in range(len(act_normal_a)):
-                    lid_batch[:, i+len(act_normal)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_normal_a[i], k=k))
-                    lid_batch_adv[:, i+len(act_normal)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_adv_a[i], k=k))
-                    lid_batch_noisy[:, i+len(act_normal)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_noise_a[i], k=k))
-                    
-                #Adding feature of prediction and probability
-                normal_prob_a, normal_pred_a = F.softmax(out_normal_a.detach(), dim=1).max(1)
-                noise_prob_a, noise_pred_a = F.softmax(out_noise_a.detach(), dim=1).max(1)
-                adv_prob_a, adv_pred_a = F.softmax(out_adv_a.detach(), dim=1).max(1)
-                lid_batch[:, len(act_normal)+len(act_normal_a)+2] = normal_prob_a
-                lid_batch_adv[:, len(act_normal)+len(act_normal_a)+2] = noise_prob_a
-                lid_batch_noisy[:, len(act_normal)+len(act_normal_a)+2] = adv_prob_a
-                lid_batch[:, len(act_normal)+len(act_normal_a)+3] = normal_pred_a
-                lid_batch_adv[:, len(act_normal)+len(act_normal_a)+3] = noise_pred_a
-                lid_batch_noisy[:, len(act_normal)+len(act_normal_a)+3] = adv_pred_a
+            out_normal, act_normal = model(batch_normal)
+            out_noise, act_noise = model(batch_noise)
+            out_adv, act_adv = model(batch_adv)
             
-            elif detector_type == 'ae_lid_f':
-                n = act_normal[0].size()[0]
-                lid_batch = torch.zeros(n, 2*len(act_normal)+4)
-                lid_batch_adv = torch.zeros(n, 2*len(act_normal)+4)
-                lid_batch_noisy = torch.zeros(n, 2*len(act_normal)+4)
-                for i in range(len(act_normal)):
-                    lid_batch[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_normal[i], k=k))
-                    lid_batch_adv[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_adv[i], k=k))
-                    lid_batch_noisy[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_noise[i], k=k))
-                    
-                    
-                #Adding feature of prediction and probability
-                normal_prob, normal_pred = F.softmax(out_normal.detach(), dim=1).max(1)
-                noise_prob, noise_pred = F.softmax(out_noise.detach(), dim=1).max(1)
-                adv_prob, adv_pred = F.softmax(out_adv.detach(), dim=1).max(1)
-                lid_batch[:, len(act_normal)] = normal_prob
-                lid_batch_adv[:, len(act_normal)] = noise_prob
-                lid_batch_noisy[:, len(act_normal)] = adv_prob
-                lid_batch[:, len(act_normal)+1] = normal_pred
-                lid_batch_adv[:, len(act_normal)+1] = noise_pred
-                lid_batch_noisy[:, len(act_normal)+1] = adv_pred
-                
-                #Features using autoencoder path
-                out_normal_a, act_normal_a = model(autoencoder(batch_normal), lid_f=True)
-                out_noise_a, act_noise_a = model(autoencoder(batch_noise), lid_f=True)
-                out_adv_a, act_adv_a = model(autoencoder(batch_adv), lid_f=True)
-                for i in range(len(act_normal_a)):
-                    lid_batch[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_normal_a[i], k=k))
-                    lid_batch_adv[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_adv_a[i], k=k))
-                    lid_batch_noisy[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_noise_a[i], k=k))
-                    
-                #Adding feature of prediction and probability
-                normal_prob_a, normal_pred_a = F.softmax(out_normal_a.detach(), dim=1).max(1)
-                noise_prob_a, noise_pred_a = F.softmax(out_noise_a.detach(), dim=1).max(1)
-                adv_prob_a, adv_pred_a = F.softmax(out_adv_a.detach(), dim=1).max(1)
-                lid_batch[:, 2*len(act_normal)+2] = normal_prob_a
-                lid_batch_adv[:, 2*len(act_normal)+2] = noise_prob_a
-                lid_batch_noisy[:, 2*len(act_normal)+2] = adv_prob_a
-                lid_batch[:, 2*len(act_normal)+3] = normal_pred_a
-                lid_batch_adv[:, 2*len(act_normal)+3] = noise_pred_a
-                lid_batch_noisy[:, 2*len(act_normal)+3] = adv_pred_a
-            
-            
-            elif detector_type == 'lid': 
+            if detector_type == 'lid': 
                 n = act_normal[0].size()[0]
                 lid_batch = torch.zeros(n, len(act_normal))
                 lid_batch_adv = torch.zeros(n, len(act_normal))
@@ -485,139 +366,6 @@ def get_lids_random_batch(model, autoencoder, X, X_noisy, X_adv, targets, datase
                     lid_batch_adv[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_adv[i], k=k))
                     lid_batch_noisy[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_noise[i], k=k))
             
-            elif detector_type == 'lid_f': 
-                n = act_normal[0].size()[0]
-                lid_batch = torch.zeros(n, len(act_normal))
-                lid_batch_adv = torch.zeros(n, len(act_normal))
-                lid_batch_noisy = torch.zeros(n, len(act_normal))
-                for i in range(len(act_normal)):
-                    lid_batch[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_normal[i], k=k))
-                    lid_batch_adv[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_adv[i], k=k))
-                    lid_batch_noisy[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_noise[i], k=k))
-            
-            elif detector_type == 'all_lid': 
-
-                # ae_feature number:
-                autoencoder.module.change_mode('out_act')
-                _, _ae_test = autoencoder(batch_normal)
-                autoencoder.module.change_mode('normal')
-                #
-
-
-                n = act_normal[0].size()[0]
-                lid_batch = torch.zeros(n, 2*len(act_normal)+len(_ae_test)+4)
-                lid_batch_adv = torch.zeros(n, 2*len(act_normal)+len(_ae_test)+4)
-                lid_batch_noisy = torch.zeros(n, 2*len(act_normal)+len(_ae_test)+4)
-                for i in range(len(act_normal)):
-                    lid_batch[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_normal[i], k=k))
-                    lid_batch_adv[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_adv[i], k=k))
-                    lid_batch_noisy[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_noise[i], k=k))
-                    
-                    
-                #Adding feature of prediction and probability
-                normal_prob, normal_pred = F.softmax(out_normal.detach(), dim=1).max(1)
-                noise_prob, noise_pred = F.softmax(out_noise.detach(), dim=1).max(1)
-                adv_prob, adv_pred = F.softmax(out_adv.detach(), dim=1).max(1)
-                lid_batch[:, len(act_normal)] = normal_prob
-                lid_batch_adv[:, len(act_normal)] = noise_prob
-                lid_batch_noisy[:, len(act_normal)] = adv_prob
-                lid_batch[:, len(act_normal)+1] = normal_pred
-                lid_batch_adv[:, len(act_normal)+1] = noise_pred
-                lid_batch_noisy[:, len(act_normal)+1] = adv_pred
-                
-                #Features using autoencoder path
-                out_normal_a, act_normal_a = model(autoencoder(batch_normal))
-                out_noise_a, act_noise_a = model(autoencoder(batch_noise))
-                out_adv_a, act_adv_a = model(autoencoder(batch_adv))
-                for i in range(len(act_normal_a)):
-                    lid_batch[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_normal_a[i], k=k))
-                    lid_batch_adv[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_adv_a[i], k=k))
-                    lid_batch_noisy[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_noise_a[i], k=k))
-                    
-                #Adding feature of prediction and probability
-                normal_prob_a, normal_pred_a = F.softmax(out_normal_a.detach(), dim=1).max(1)
-                noise_prob_a, noise_pred_a = F.softmax(out_noise_a.detach(), dim=1).max(1)
-                adv_prob_a, adv_pred_a = F.softmax(out_adv_a.detach(), dim=1).max(1)
-                lid_batch[:, 2*len(act_normal)+2] = normal_prob_a
-                lid_batch_adv[:, 2*len(act_normal)+2] = noise_prob_a
-                lid_batch_noisy[:, 2*len(act_normal)+2] = adv_prob_a
-                lid_batch[:, 2*len(act_normal)+3] = normal_pred_a
-                lid_batch_adv[:, 2*len(act_normal)+3] = noise_pred_a
-                lid_batch_noisy[:, 2*len(act_normal)+3] = adv_pred_a
-
-                # Adding feature from autoencoder
-                autoencoder.module.change_mode('out_act')
-                _, ae_act_normal_a = autoencoder(batch_normal)
-                _, ae_act_noise_a = autoencoder(batch_noise)
-                _, ae_act_adv_a = autoencoder(batch_adv)
-
-                for i in range(len(ae_act_normal_a)):
-                    lid_batch[:, i+2*len(act_normal_a)+4] = torch.FloatTensor(mle_batch(ae_act_normal_a[i], ae_act_normal_a[i], k=k))
-                    lid_batch_adv[:, i+2*len(act_normal_a)+4] = torch.FloatTensor(mle_batch(ae_act_normal_a[i], ae_act_adv_a[i], k=k))
-                    lid_batch_noisy[:, i+2*len(act_normal_a)+4] = torch.FloatTensor(mle_batch(ae_act_normal_a[i], ae_act_noise_a[i], k=k))
-                    
-            elif detector_type == 'all_lid_f': 
-
-                # ae_feature number:
-                autoencoder.module.change_mode('out_act')
-                _, _ae_test = autoencoder(batch_normal)
-                autoencoder.module.change_mode('normal')
-                #
-
-
-                n = act_normal[0].size()[0]
-                lid_batch = torch.zeros(n, 2*len(act_normal)+len(_ae_test)+4)
-                lid_batch_adv = torch.zeros(n, 2*len(act_normal)+len(_ae_test)+4)
-                lid_batch_noisy = torch.zeros(n, 2*len(act_normal)+len(_ae_test)+4)
-                for i in range(len(act_normal)):
-                    lid_batch[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_normal[i], k=k))
-                    lid_batch_adv[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_adv[i], k=k))
-                    lid_batch_noisy[:, i] = torch.FloatTensor(mle_batch(act_normal[i], act_noise[i], k=k))
-                    
-                    
-                #Adding feature of prediction and probability
-                normal_prob, normal_pred = F.softmax(out_normal.detach(), dim=1).max(1)
-                noise_prob, noise_pred = F.softmax(out_noise.detach(), dim=1).max(1)
-                adv_prob, adv_pred = F.softmax(out_adv.detach(), dim=1).max(1)
-                lid_batch[:, len(act_normal)] = normal_prob
-                lid_batch_adv[:, len(act_normal)] = noise_prob
-                lid_batch_noisy[:, len(act_normal)] = adv_prob
-                lid_batch[:, len(act_normal)+1] = normal_pred
-                lid_batch_adv[:, len(act_normal)+1] = noise_pred
-                lid_batch_noisy[:, len(act_normal)+1] = adv_pred
-                
-                #Features using autoencoder path
-                out_normal_a, act_normal_a = model(autoencoder(batch_normal), lid_f=True)
-                out_noise_a, act_noise_a = model(autoencoder(batch_noise), lid_f=True)
-                out_adv_a, act_adv_a = model(autoencoder(batch_adv), lid_f=True)
-                for i in range(len(act_normal_a)):
-                    lid_batch[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_normal_a[i], k=k))
-                    lid_batch_adv[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_adv_a[i], k=k))
-                    lid_batch_noisy[:, i+len(act_normal_a)+2] = torch.FloatTensor(mle_batch(act_normal_a[i], act_noise_a[i], k=k))
-                    
-                #Adding feature of prediction and probability
-                normal_prob_a, normal_pred_a = F.softmax(out_normal_a.detach(), dim=1).max(1)
-                noise_prob_a, noise_pred_a = F.softmax(out_noise_a.detach(), dim=1).max(1)
-                adv_prob_a, adv_pred_a = F.softmax(out_adv_a.detach(), dim=1).max(1)
-                lid_batch[:, 2*len(act_normal)+2] = normal_prob_a
-                lid_batch_adv[:, 2*len(act_normal)+2] = noise_prob_a
-                lid_batch_noisy[:, 2*len(act_normal)+2] = adv_prob_a
-                lid_batch[:, 2*len(act_normal)+3] = normal_pred_a
-                lid_batch_adv[:, 2*len(act_normal)+3] = noise_pred_a
-                lid_batch_noisy[:, 2*len(act_normal)+3] = adv_pred_a
-
-                # Adding feature from autoencoder
-                autoencoder.module.change_mode('out_act')
-                _, ae_act_normal_a = autoencoder(batch_normal)
-                _, ae_act_noise_a = autoencoder(batch_noise)
-                _, ae_act_adv_a = autoencoder(batch_adv)
-
-                for i in range(len(ae_act_normal_a)):
-                    lid_batch[:, i+2*len(act_normal_a)+4] = torch.FloatTensor(mle_batch(ae_act_normal_a[i], ae_act_normal_a[i], k=k))
-                    lid_batch_adv[:, i+2*len(act_normal_a)+4] = torch.FloatTensor(mle_batch(ae_act_normal_a[i], ae_act_adv_a[i], k=k))
-                    lid_batch_noisy[:, i+2*len(act_normal_a)+4] = torch.FloatTensor(mle_batch(ae_act_normal_a[i], ae_act_noise_a[i], k=k))
-                    
-                    
             else:
                 raise('do not know type')
             #Concat the features

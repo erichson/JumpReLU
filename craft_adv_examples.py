@@ -57,12 +57,12 @@ def craft_one_type(model, testloader, dataset, attack, batch_size, device):
             inputs, targets = inputs.to(device), targets.to(device)
             if batch_idx == 0:
                 Adv_data = fgsm_adaptive_iter(
-                model, inputs, targets, eps=args.attack_eps, iter=1000)
+                model, inputs, targets, eps=args.attack_eps, iter=200)
                 Adv_targets = targets
                 X = inputs
             else:
                 Adv_data = torch.cat((Adv_data, fgsm_adaptive_iter(
-                    model, inputs, targets, eps=args.attack_eps, iter=1000)), dim=0)
+                    model, inputs, targets, eps=args.attack_eps, iter=200)), dim=0)
                 Adv_targets = torch.cat((Adv_targets, targets), dim=0)
                 X = torch.cat((X, inputs), dim=0)
     #TODO: Implement deep fool and tr_attack
@@ -90,12 +90,12 @@ def craft_one_type(model, testloader, dataset, attack, batch_size, device):
             inputs, targets = inputs.to(device), targets.to(device)
             if batch_idx == 0:
                 Adv_data = deep_fool_iter(
-                    model, inputs, targets, c=9, p=2, iter=1000, worst_case = False)
+                    model, inputs, targets, c=9, p=1, iter=1000, worst_case = False)
                 Adv_targets = targets
                 X = inputs
             else:
                 Adv_data = torch.cat((Adv_data, deep_fool_iter(
-                    model, inputs, targets, c=9, p=2, iter=1000, worst_case = False)), dim=0)
+                    model, inputs, targets, c=9, p=1, iter=1000, worst_case = False)), dim=0)
                 Adv_targets = torch.cat((Adv_targets, targets), dim=0)
                 X = torch.cat((X, inputs), dim=0)
     elif attack == 'cw-l2':
@@ -129,8 +129,8 @@ def craft_one_type(model, testloader, dataset, attack, batch_size, device):
     test_loss = 0
     correct = 0
     total = 0
-    #testset = transform_data(Adv_data, Adv_targets, args.batch_size)
-    testset = transform_data(X, Adv_targets, args.batch_size)
+    testset = transform_data(Adv_data, Adv_targets, args.batch_size)
+    #testset = transform_data(X, Adv_targets, args.batch_size)
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testset):
             inputs, targets = inputs.to(device), targets.to(device)
@@ -179,7 +179,7 @@ def main(args):
     model_list = {
             'LeNetLike': LeNetLike(jump = args.jump),
             'AlexLike': AlexLike(jump = args.jump),
-            'JumpResNet': JumpResNet(depth=20, jump = args.jump),
+            #'JumpResNet': JumpResNet(depth=20, jump = args.jump),
             'MobileNetV2': MobileNetV2(jump = args.jump),      
     }
     
