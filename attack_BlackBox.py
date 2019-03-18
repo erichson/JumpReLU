@@ -97,7 +97,7 @@ attack_time = pd.DataFrame()
 model_list = {
         'LeNetLike': LeNetLike(jump = 0.0),
         'AlexLike': AlexLike(jump = 0.0),
-        #'JumpResNet': JumpResNet(depth = args.depth, jump = 0.0),
+        #'ResNet': ResNet(depth = args.depth, jump = 0.0),
         'MobileNetV2': MobileNetV2(jump = 0.0),      
         'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=1, jump=0.0), 
         
@@ -198,7 +198,7 @@ for jump in args.jump:
         model_list = {
                 'LeNetLike': LeNetLike(jump = jump),
                 'AlexLike': AlexLike(jump = jump),
-                #'JumpResNet': JumpResNet(depth=args.depth, jump = jump),
+                #'ResNet': ResNet(depth=args.depth, jump = jump),
                 'MobileNetV2': MobileNetV2(jump = jump), 
                 'WideResNet': WideResNet(depth=args.depth, widen_factor=args.widen_factor, dropout_rate=0.3, num_classes=10, level=1, jump=jump), 
                 
