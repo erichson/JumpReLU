@@ -54,7 +54,7 @@ parser.add_argument('--jump', type=float, nargs='+', default=[0.0, 1.5], help='j
 
 parser.add_argument('--runs', type=int, default=1, help='number of simulations')
 
-parser.add_argument('--depth', type=int, default=20, help='choose the depth of resnet')
+parser.add_argument('--depth', type=int, default=34, help='choose the depth of resnet')
 #
 parser.add_argument('--widen_factor', type=int, default=4, metavar='E', help='Widen factor')
 

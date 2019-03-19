@@ -53,7 +53,7 @@ parser.add_argument('--jump', type=float, nargs='+', default=[0.0], help='jump v
 
 parser.add_argument('--runs', type=int, default=1, help='number of simulations')
 
-parser.add_argument('--depth', type=int, default=20, help='choose the depth of resnet')
+parser.add_argument('--depth', type=int, default=34, help='choose the depth of resnet')
 #
 #
 parser.add_argument('--id', type=str, default='det', help='identifier for saving results')
