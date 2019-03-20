@@ -5,7 +5,7 @@ import math
 
 from activationfun import *
 
-
+from copy import deepcopy
 
 # Resnet for cifar dataset. Adapted from https://github.com/bearpaw/pytorch-classification
 def conv3x3(in_planes, out_planes, stride = 1):
@@ -124,6 +124,7 @@ class ResNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+        self.mode = 'normal'
 
     def _make_layer(self, block, planes, blocks, stride = 1, jump = 0.0):
         downsample = None
@@ -142,17 +143,38 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
+    def change_mode(self, mode):
+        assert(mode == 'normal' or mode == 'out_act')
+        self.mode = mode
+
     def forward(self, x):
+        bs = x.size(0)
+        output_list = [deepcopy(x.data)]
+        
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.JumpReLU(x)    # 32x32
+        output_list = [deepcopy(x.data)]
 
-        x = self.layer1(x)  # 32x32
-        x = self.layer2(x)  # 16x16
-        x = self.layer3(x)  # 8x8
+        for i in range(len(self.layer1)):
+            x = self.layer1[i](x)
+            output_list.append(deepcopy(x.data))
+        
+        for i in range(len(self.layer2)):
+            x = self.layer2[i](x)
+            output_list.append(deepcopy(x.data))
+        
+        for i in range(len(self.layer3)):
+            x = self.layer3[i](x)
+            output_list.append(deepcopy(x.data))
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
+        output_list = [deepcopy(x.data)]
 
-        return x
+        if self.mode == 'normal':
+            return x 
+        elif self.mode == 'out_act':
+            output_list = [t.view(bs, -1) for t in output_list]
+            return x, output_list
