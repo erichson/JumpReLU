@@ -63,18 +63,18 @@
 # CIFAR10: ResNet
 
 ## Baseline Training
-> export CUDA_VISIBLE_DEVICES=0; python train.py --name cifar10 --epochs 120 --arch ResNet --lr 0.1 --lr-decay 0.2 --lr-schedule normal --lr-decay-epoch 30 60 90 --batch-size 128 --test-batch-size 200 --weight-decay 5e-4
+> export CUDA_VISIBLE_DEVICES=0; python train.py --name cifar10 --epochs 120 --arch ResNet --lr 0.1 --lr-decay 0.1 --lr-schedule normal --lr-decay-epoch 30 60 90 --batch-size 128 --test-batch-size 200 --weight-decay 5e-4
 
 
 ### White-Box Attack
-> export CUDA_VISIBLE_DEVICES=0; python attack_WhiteBox.py --eps 0.01 --test-batch-size 500 --arch ResNet --resume cifar10_result/ResNet_baseline.pkl --dataset cifar10 --iter 7 --iter_df 7 --runs 1 --jump   0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8
+> export CUDA_VISIBLE_DEVICES=0; python attack_WhiteBox.py --eps 0.01 --test-batch-size 500 --arch ResNet --resume cifar10_result/ResNet_baseline.pkl --dataset cifar10 --iter 7 --iter_df 7 --runs 1 --jump   0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09
 
 ### Black-Box Attack
-> export CUDA_VISIBLE_DEVICES=0; python attack_BlackBox.py --eps 0.031 --test-batch-size 500 --arch ResNet --resume cifar10_result/ResNet_baseline.pkl --dataset cifar10 --iter 7 --iter_df 7 --runs 1 --jump  0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8
+> export CUDA_VISIBLE_DEVICES=0; python attack_BlackBox.py --eps 0.031 --test-batch-size 500 --arch ResNet --resume cifar10_result/ResNet_baseline.pkl --dataset cifar10 --iter 7 --iter_df 7 --runs 1 --jump  0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09
 
 
 ## Robust Training
-> export CUDA_VISIBLE_DEVICES=0; python train.py --name cifar10 --epochs 120 --arch ResNet --lr 0.1 --lr-decay 0.2 --lr-decay-epoch 30 60 90  --batch-size 128 --test-batch-size 200 --weight-decay 5e-4 --adv_ratio 0.6 --eps 0.031
+> export CUDA_VISIBLE_DEVICES=0; python train.py --name cifar10 --epochs 120 --arch ResNet --lr 0.1 --lr-decay 0.1 --lr-decay-epoch 30 60 90  --batch-size 128 --test-batch-size 200 --weight-decay 5e-4 --adv_ratio 0.6 --eps 0.031
 
 
 ### White-Box Attack
@@ -109,6 +109,9 @@
 
 ### Black-Box Attack
 > export CUDA_VISIBLE_DEVICES=0; python attack_BlackBox.py --eps 0.01 --arch WideResNet --resume cifar10_result/WideResNet_robust.pkl  --dataset cifar10 --test-batch-size 500 --iter 7 --iter_df 7 --runs 1 --depth 34 --widen_factor 4 --jump 0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09
+
+
+
 
 
 
