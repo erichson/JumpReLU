@@ -40,6 +40,8 @@ parser.add_argument('--seed', type=int, default=1, metavar='S', help='random see
 
 parser.add_argument('--eps', type=float, default=0.01, metavar='E', help='how far to perturb input in the negative gradient sign')
 
+parser.add_argument('--eps_tr', type=float, default=0.01, metavar='ET', help='how far to perturb input with trust region direction')
+
 parser.add_argument('--arch', type=str, default='LeNetLike', help='choose an architecture')
 
 parser.add_argument('--resume', type=str, default='mnist_result/LeNetLike_baseline.pkl', help='choose an existing model')
@@ -49,6 +51,8 @@ parser.add_argument('--dataset', type=str, default='mnist', help='chose dataset'
 parser.add_argument('--iter', type=int, default=40, help='number of iterations for FGSM')
 
 parser.add_argument('--iter_df', type=int, default=40, help='number of iterations for DeepFool')
+
+parser.add_argument('--iter_tr', type=int, default=40, help='number of iterations for TrustRegion Attack')
 
 parser.add_argument('--jump', type=float, nargs='+', default=[0.0, 1.5], help='jump value')
 
@@ -126,6 +130,7 @@ for irun in range(args.runs):
         X_fgsm = torch.Tensor(num_data, 1, 28, 28)
         X_deepfool1 = torch.Tensor(num_data, 1, 28, 28)
         X_deepfool2 = torch.Tensor(num_data, 1, 28, 28)            
+        X_tr = torch.Tensor(num_data, 1, 28, 28)            
         
     elif args.dataset == 'cifar10':
         num_data = 10000
@@ -135,12 +140,13 @@ for irun in range(args.runs):
         X_fgsm = torch.Tensor(num_data, 3, 32, 32)
         X_deepfool1 = torch.Tensor(num_data, 3, 32, 32)
         X_deepfool2 = torch.Tensor(num_data, 3, 32, 32)            
+        X_tr = torch.Tensor(num_data, 3, 32, 32)            
 
 
 iter_fgsm = 0.
 iter_dp1 = 0.
 iter_dp2 = 0.
-
+iter_tr = 0.
 
 Y_test = torch.LongTensor(num_data)
 
@@ -182,13 +188,23 @@ time_deepfool_two = time.time() - stat_time
 print('total_time: ', time_deepfool_two)
         
         
+print('Run Trust Region Attack')
+stat_time = time.time()
+for i, (data, target) in enumerate(test_loader):
+    X_tr[i*batchSize:(i+1)*batchSize,:], a = tr_attack_iter(model, data, target, args.eps_tr, c=num_class, p=2, iterations=args.iter_tr)
+    iter_tr += a
+print('iters: ', iter_tr)
+time_tr = time.time() - stat_time        
+print('total_time: ', time_tr)
+
+
 for jump in args.jump:
           
-        result_acc = np.zeros(7)
-        result_ent = np.zeros(7)
-        result_dis = np.zeros(7)
-        result_dis_abs = np.zeros(7)
-        result_large = np.zeros(7)
+        result_acc = np.zeros(9)
+        result_ent = np.zeros(9)
+        result_dis = np.zeros(9)
+        result_dis_abs = np.zeros(9)
+        result_large = np.zeros(9)
         
         
         
@@ -219,6 +235,7 @@ for jump in args.jump:
         result_acc[1], result_ent[1] = test_adv(X_fgsm, Y_test, model, num_data, args)
         result_acc[2], result_ent[2] = test_adv(X_deepfool1, Y_test, model, num_data, args)
         result_acc[3], result_ent[3] = test_adv(X_deepfool2, Y_test, model, num_data, args)
+        result_acc[4], result_ent[4] = test_adv(X_tr, Y_test, model, num_data, args)
         
         
         # FGSM inf norm
@@ -239,14 +256,19 @@ for jump in args.jump:
         # Deepfool (two) two norm
         result_dis[6], result_dis_abs[6],  result_large[6]= distance(X_deepfool2, X_ori, norm=2)        
         
+        # TR inf norm
+        result_dis[7], result_dis_abs[7],  result_large[7]= distance(X_tr, X_ori, norm=1)
+        
+        # TR two norm
+        result_dis[8], result_dis_abs[8],  result_large[8]= distance(X_tr, X_ori, norm=2)        
         
         #***********************
         # Print results
         #***********************
         print('Jump value: ', jump)
         x = PrettyTable()
-        x.field_names = [" ", "Clean Data", "IFGSM", "DeepFool_inf", "DeepFool"]
-        x.add_row(np.hstack(('Accuracy: ',   np.round(result_acc[([0,1,2,3])], 5))))
-        x.add_row(np.hstack(('Rel. Noise: ', np.round(result_dis[([0,1,3,6])], 5))))
-        x.add_row(np.hstack(('Abs. Noise: ', np.round(result_dis_abs[([0,1,3,6])], 5))))
+        x.field_names = [" ", "Clean Data", "IFGSM", "DeepFool_inf", "DeepFool", "TR"]
+        x.add_row(np.hstack(('Accuracy: ',   np.round(result_acc[([0,1,2,3,4])], 5))))
+        x.add_row(np.hstack(('Rel. Noise: ', np.round(result_dis[([0,1,3,6,8])], 5))))
+        x.add_row(np.hstack(('Abs. Noise: ', np.round(result_dis_abs[([0,1,3,6,8])], 5))))
         print(x)
