@@ -2,7 +2,7 @@
 
 This repository provides research code for the JumpReLU, a new activation function which helps to improve the model robustness. The idea is to introduces a slight jump discontinuity to improve the robustness of the model during the inference time, as illustrated below:
 
-![speed](https://raw.githubusercontent.com/Benli11/jumprelu/master/plots/jumprelu.png)
+![JumpReLU](https://github.com/erichson/JumpReLU/blob/master/plots/jumprelu.png)
 
 
 The jump size poses a trade-off between predictive accuracy and robustness, and can be trained during a validation stage. This means, the user needs to decide how much accuracy on clean data he is willing to sacrifice in order to gain more robustness. 
