@@ -9,16 +9,16 @@ The jump size poses a trade-off between predictive accuracy and robustness, and 
 
 We consider the following attack methods to demonstrate the JumpReLU:
 
-* Projected gradient descent (PGD) / iterative fast gradient sign method (IFGSM).
-* Deep Fool (DF) with 2-norm and inf-norm.
-* Trust Region (TR) method.
+* Projected gradient descent (PGD) / iterative fast gradient sign method (IFGSM): [https://arxiv.org/abs/1706.06083](https://arxiv.org/abs/1706.06083).
+* Deep Fool (DF) with 2-norm and inf-norm: [https://arxiv.org/abs/1511.04599](https://arxiv.org/abs/1511.04599).
+* Trust Region (TR) method: [https://arxiv.org/abs/1812.06371](https://arxiv.org/abs/1812.06371).
 
 We run both gray-box and white-box attacks for the MNIST and CIFAR10 dataset, considering several different network architectures such as:
 
 * LeNet5 like architecture.
 * AlexLike architecture.
-* Wide ResNet (30-4) architecture.
-* MobileNetV2 architecture.
+* Wide ResNet (30-4) architecture [https://arxiv.org/abs/1605.07146](https://arxiv.org/abs/1605.07146).
+* MobileNetV2 architecture: [https://arxiv.org/abs/1801.04381](https://arxiv.org/abs/1801.04381).
 
 
 For more details see the corresponding paper: xxx.
