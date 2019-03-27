@@ -13,4 +13,12 @@ We consider the following attack methods to demonstrate the JumpReLU:
 * Deep Fool (DF) with 2-norm and inf-norm.
 * Trust Region (TR) method.
 
-We run both gray-box and white-box attacks. For more details see the corresponding paper: xxx.
+We run both gray-box and white-box attacks for the MNIST and CIFAR10 dataset, considering several different network architectures such as:
+
+* LeNet5 like architecture.
+* AlexLike architecture.
+* Wide ResNet (30-4) architecture.
+* MobileNetV2 architecture.
+
+
+For more details see the corresponding paper: xxx.
