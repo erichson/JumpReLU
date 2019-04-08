@@ -1,6 +1,8 @@
 ## JumpReLU: A Retrofit Defense Strategy for Adversarial Attacks
 
-This repository provides research code for the JumpReLU, a new activation function which helps to improve the model robustness. The idea is to introduces a slight jump discontinuity to improve the robustness of the model during the inference time, as illustrated below:
+This repository provides research code for the JumpReLU, a new activation function which helps to improve the model robustness. For more details see the corresponding paper: xxx.
+
+The idea is to introduces a slight jump discontinuity to improve the robustness of the model during the inference time, as illustrated below:
 
 ![JumpReLU](https://github.com/erichson/JumpReLU/blob/master/plots/jumprelu.png)
 
@@ -21,4 +23,4 @@ We run both gray-box and white-box attacks for the MNIST and CIFAR10 dataset, co
 * MobileNetV2 architecture: [https://arxiv.org/abs/1801.04381](https://arxiv.org/abs/1801.04381).
 
 
-For more details see the corresponding paper: xxx.
+
